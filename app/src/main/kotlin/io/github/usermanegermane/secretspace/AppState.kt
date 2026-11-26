@@ -38,10 +38,11 @@ sealed interface Screen {
     data class History(val vaultId: String, val entryId: String) : Screen
     data class Archive(val vaultId: String) : Screen
     data object Settings : Screen
+    data object Connect : Screen
 }
 
-/** A new account on its way: made in memory, not on the server or this phone yet. */
-class Creating(val url: String, val caFile: String, var code: String, val made: NewAccount)
+/** A new account on its way: made in memory, not on the server or this phone yet. No ``url``: phone only. */
+class Creating(val url: String?, val caFile: String, var code: String, val made: NewAccount)
 
 /** A sync stopped on a vault with conflicts, waiting for the user's choices. */
 class Question(val vaultName: String, val result: Merge.Result, val answer: CompletableDeferred<Map<String, String>?>)
@@ -122,13 +123,17 @@ class AppState(private val context: Context) {
     }
 
     // ------------------------------------------------------------------ a new account
-    /** Step 1: the server answers and the keys are made; nothing is written yet. */
-    fun startCreate(url: String, certificate: Uri?, code: String, username: String, password: String) =
+    /**
+     * Step 1: the server answers (if there is one) and the keys are made;
+     * nothing is written yet. A null ``url`` is an account on this phone only.
+     */
+    fun startCreate(url: String?, certificate: Uri?, code: String, username: String, password: String) =
         run("Making the account's keys…") {
-            val address = url.trim()
-            val ca = withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: "" }
+            val address = url?.trim()
+            val ca = if (address == null) "" else
+                withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: "" }
             val made = withContext(Dispatchers.Default) {
-                AccountServer(address, ca).checkApi()         // a wrong address or certificate shows now
+                if (address != null) AccountServer(address, ca).checkApi()   // a wrong address or certificate shows now
                 NewAccount.prepare(store, username.trim(), password)
             }
             creating = Creating(address, ca, code, made)
@@ -148,12 +153,20 @@ class AppState(private val context: Context) {
         }
     }
 
-    /** The last step: on the server, then on this phone, then open, with a first Sync. */
+    /** The last step: on the server, then on this phone, then open, with a first Sync. Or this phone only. */
     fun finishCreate(code: String) {
         val c = creating ?: return
         c.code = code
+        val url = c.url
+        if (url == null) return run("Creating the account…") {
+            val account = withContext(Dispatchers.IO) { c.made.createHere(store) }
+            creating = null
+            opened(OpenAccount(account), null)
+            say("Account “${account.username}” created on this phone. To keep a copy on your server, " +
+                "see Settings → Sync server.")
+        }
         run("Creating the account…") {
-            val account = withContext(Dispatchers.Default) { c.made.createOn(store, c.url, c.caFile, code) }
+            val account = withContext(Dispatchers.Default) { c.made.createOn(store, url, c.caFile, code) }
             creating = null
             val open = OpenAccount(account)
             opened(open, null)
@@ -256,22 +269,59 @@ class AppState(private val context: Context) {
     fun sync() {
         val account = open ?: return
         if (account.account.server == null) return say("This account is not on a server.")
-        run("Syncing…") {
-            val report = withContext(Dispatchers.IO) {
-                account.sync { name, result ->
-                    val asked = Question(name, result, CompletableDeferred())
-                    runBlocking(Dispatchers.Main) { question = asked }
-                    try {
-                        runBlocking { asked.answer.await() }
-                    } finally {
-                        runBlocking(Dispatchers.Main) { if (question === asked) question = null }
-                    }
+        run("Syncing…") { say(syncNow(account)) }
+    }
+
+    /** One Sync of every vault; what it did, in lines. Conflicts are asked in [question]. */
+    private suspend fun syncNow(account: OpenAccount): String {
+        val report = withContext(Dispatchers.IO) {
+            account.sync { name, result ->
+                val asked = Question(name, result, CompletableDeferred())
+                runBlocking(Dispatchers.Main) { question = asked }
+                try {
+                    runBlocking { asked.answer.await() }
+                } finally {
+                    runBlocking(Dispatchers.Main) { if (question === asked) question = null }
                 }
             }
-            val lines = report.changes + report.leftForLater.map { "$it: left for the next Sync" } +
-                report.tooNew.map { "$it: changed by a newer SecretSpace, nothing changed" } +
-                report.readOnly.map { "$it: read only, nothing sent" }
-            say(if (lines.isEmpty()) "Up to date" else lines.joinToString("\n"))
+        }
+        val lines = report.changes + report.leftForLater.map { "$it: left for the next Sync" } +
+            report.tooNew.map { "$it: changed by a newer SecretSpace, nothing changed" } +
+            report.readOnly.map { "$it: read only, nothing sent" }
+        return if (lines.isEmpty()) "Up to date" else lines.joinToString("\n")
+    }
+
+    // ------------------------------------------------------------------ the sync server
+    /**
+     * Put the open account (on this phone only so far) on a server: made
+     * there with the sign-up code, or joined if it is there already; then a
+     * first Sync puts the vaults there.
+     */
+    fun connect(url: String, certificate: Uri?, code: String) {
+        val account = open ?: return
+        run("Connecting to the server…") {
+            val address = url.trim()
+            val ca = withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: "" }
+            val outcome = withContext(Dispatchers.Default) {
+                AccountSync.connect(account.account, address, ca, code)
+            }
+            screen = Screen.Vault
+            busy = "Syncing…"
+            val first = if (outcome == "created") "Account created on the server" else "Connected to the server"
+            try {
+                say(first + ". " + syncNow(account))
+            } catch (e: Exception) {
+                say("$first. Sync did not run yet: ${e.message}")
+            }
+        }
+    }
+
+    /** This phone stops syncing the account; the server keeps its copy (the PC's forget_server). */
+    fun disconnect() {
+        val account = open ?: return
+        run("Saving…") {
+            withContext(Dispatchers.IO) { account.account.setServer(null) }
+            say("This phone no longer syncs the account. The server's copy is kept.")
         }
     }
 

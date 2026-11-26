@@ -3,6 +3,8 @@ package secretspace.core
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import secretspace.core.Disk.flag
+import secretspace.core.Disk.text
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.File
 import java.net.HttpURLConnection
@@ -47,6 +49,45 @@ class NewAccountTest {
         assertContains(kit, "Account:      dana")
         val words = made.recoveryPhrase.split(" ")
         assertFalse((0..9).any { kit.contains(words.subList(it, it + 3).joinToString(" ")) }, "no run of the words")
+    }
+
+    @Test fun anAccountOnThisPhoneOnlyNeedsNoServer() {
+        val store = store()
+        val made = prepare(store, "gail", "gail's pass")
+        val kit = made.emergencyKitText(null, "2026-01-02T03:04:05Z")
+        assertContains(kit, "Server:       (none - this account is on this phone only)\n")
+        val account = made.createHere(store)
+        assertEquals(null, account.server)
+        assertEquals(made.fingerprint, account.fingerprint)
+        assertFailsWith<IllegalStateException> { made.createHere(store) }
+        assertFailsWith<IllegalStateException> { prepare(store, "gail") }
+
+        val open = OpenAccount(store.unlock("gail", "gail's pass")).also { it.load() }
+        open.add(open.account.personalId, "Kept here", "gail", "pw1")
+        val reopened = OpenAccount(store.unlock("gail", "gail's pass")).also { it.load() }
+        assertEquals(listOf("Kept here"), reopened.entries(reopened.account.personalId).map { it["site"] })
+        val sync = assertFailsWith<SyncError> { reopened.sync { _, _ -> null } }
+        assertContains(sync.message!!, "not on a sync server")
+    }
+
+    @Test fun anotherServerStartsTheVaultsAfresh() {
+        val store = store()
+        val account = prepare(store, "hal").createHere(store)
+        val team = account.createVault("Team").hex
+        account.setServer("https://10.0.0.1:59872/", "/ca.crt")
+        assertEquals("https://10.0.0.1:59872", account.server!!.text("url"))
+        account.markVault(team, "on_server" to kotlinx.serialization.json.JsonPrimitive(true),
+            "role" to kotlinx.serialization.json.JsonPrimitive(AccountStore.ROLE_READER))
+        account.setServer("http://10.0.0.1:59872", "")          // the same server, HTTPS turned off: kept
+        assertTrue(account.vaultRecord(team).flag("on_server"))
+        assertEquals(AccountStore.ROLE_READER, account.vaultRole(team))
+        account.setServer(null)                                   // none: the vault is this phone's own again
+        assertEquals(null, account.server)
+        assertFalse(account.vaultRecord(team).flag("on_server"))
+        assertEquals(AccountStore.ROLE_OWNER, account.vaultRole(team))
+        assertEquals("Team", account.vaultFile(team).name, "the name and key are kept")
+        val again = store.unlock("hal", "pw")
+        assertEquals(null, again.server, "and it is on disk")
     }
 
     // ------------------------------------------------------------------ with the lab server
@@ -105,5 +146,51 @@ class NewAccountTest {
         val taken = assertFailsWith<SyncError> { again.createOn(other, s("url"), s("ca_file"), s("sign_up_code")) }
         assertContains(taken.message!!, "already has an account called “frank”")
         assertFalse(other.accountExists("frank"))
+    }
+
+    @Test fun anAccountOnThisPhoneOnlyGoesOnAServerLater() {
+        if (System.getenv("SECRETSPACE_LAB_REQUIRED") == "1") assertNotNull(labFile, "the lab server did not start")
+        assumeTrue(labFile != null, "no lab server (tools/lab_server.py)")
+        val store = store()
+        val made = prepare(store, "ivy", "ivy's pass")
+        made.createHere(store)
+        val open = OpenAccount(store.unlock("ivy", "ivy's pass")).also { it.load() }
+        open.add(open.account.personalId, "Before the server", "ivy", "first")
+        val team = open.account.createVault("Ivy's team").hex
+        open.load()
+        open.add(team, "Shared later", "ivy", "second")
+
+        val none = assertFailsWith<LoginFailed> { AccountSync.connect(open.account, s("url"), s("ca_file"), "") }
+        assertContains(none.message!!, "sign-up code")
+        val wrong = assertFailsWith<LoginFailed> { AccountSync.connect(open.account, s("url"), s("ca_file"), "nope") }
+        assertEquals("The server did not accept that sign-up code.", wrong.message)
+        assertEquals(null, store.unlock("ivy", "ivy's pass").server, "nothing remembered while refused")
+
+        assertEquals("created", AccountSync.connect(open.account, s("url"), s("ca_file"), s("sign_up_code")))
+        assertEquals(s("url").trimEnd('/'), store.unlock("ivy", "ivy's pass").server!!.text("url"))
+        open.sync { _, _ -> fail("nothing to ask") }
+
+        val onPc = pc("pc_sign_in", mapOf("who" to "ivy", "password" to "ivy's pass",
+            "secret_key_text" to made.secretKeyText, "phrase" to made.recoveryPhrase))
+        assertEquals(made.fingerprint, onPc["fingerprint"])
+        assertEquals(true, onPc["phrase_opens_it"])
+        val vaults = Py.asObj(onPc["vaults"])!!
+        fun sites(name: String) = Entries.accountsOf(Py.asObj(Py.asObj(vaults[name])!!["data"])!!).map { it["site"] }
+        assertEquals(listOf("Before the server"), sites("Personal"))
+        assertEquals(listOf("Shared later"), sites("Ivy's team"), "a vault made before connecting goes there too")
+
+        // stop syncing, then connect again: the server has it already, so no code is needed
+        open.account.setServer(null)
+        assertEquals("joined", AccountSync.connect(open.account, s("url"), s("ca_file"), ""))
+        open.load()
+        open.sync { _, _ -> fail("nothing to ask") }
+        assertEquals(listOf("Before the server"), open.entries(open.account.personalId).map { it["site"] })
+
+        // a phone-only account whose name is taken on the server is refused, and stays phone-only
+        val other = store()
+        val twin = prepare(other, "ivy", "another pass").createHere(other)
+        val taken = assertFailsWith<SyncError> { AccountSync.connect(twin, s("url"), s("ca_file"), s("sign_up_code")) }
+        assertContains(taken.message!!, "already has an account called “ivy”")
+        assertEquals(null, other.unlock("ivy", "another pass").server)
     }
 }

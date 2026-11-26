@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,12 +46,14 @@ import secretspace.core.NewAccount
 import secretspace.core.Passwords
 
 /**
- * A new account, in the PC's steps: the details (with the server it goes
- * on), the Emergency Kit, the 12 words, then three of them typed back.
- * Nothing is written until the last step has put it on the server.
+ * A new account, in the PC's steps: the details (on this phone only, or
+ * with the server it goes on), the Emergency Kit, the 12 words, then three
+ * of them typed back. Nothing is written until the last step: then on the
+ * server first, or on this phone only.
  */
 @Composable
 fun CreateScreen(state: AppState) {
+    var onServer by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("https://") }
     var certificate by remember { mutableStateOf<Uri?>(null) }
     var code by remember { mutableStateOf("") }
@@ -63,20 +67,26 @@ fun CreateScreen(state: AppState) {
     Column(Modifier.fillMaxSize()) {
         Bar("New account", back = { state.cancelCreate() })
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-            Text("Step 1 of 4 · The account is made on this phone and put on your SecretSpace server, " +
-                "where your PCs can sign in to it.", style = MaterialTheme.typography.bodyMedium)
-            Spacer(Modifier.height(12.dp))
-            Field("Server address", url, { url = it }, keyboard = KeyboardType.Uri,
-                supporting = "As on the PC, e.g. https://10.10.10.3:59872")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = { state.away = true; pick.launch(arrayOf("*/*")) }) {
-                    Text(if (certificate == null) "Server's certificate…" else "Certificate chosen ✓")
+            Text("Step 1 of 4 · Where the account is kept.", style = MaterialTheme.typography.bodyMedium)
+            Choice(!onServer, "On this phone only",
+                "No server needed. The phone holds the only copy: if it is lost or reset, the passwords are " +
+                    "gone. You can put the account on a server later (Settings → Sync server).") { onServer = false }
+            Choice(onServer, "On my SecretSpace server",
+                "Kept on the server too and synced, so your PCs can sign in to it.") { onServer = true }
+            Spacer(Modifier.height(8.dp))
+            if (onServer) {
+                Field("Server address", url, { url = it }, keyboard = KeyboardType.Uri,
+                    supporting = "As on the PC, e.g. https://10.10.10.3:59872")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedButton(onClick = { state.away = true; pick.launch(arrayOf("*/*")) }) {
+                        Text(if (certificate == null) "Server's certificate…" else "Certificate chosen ✓")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text("The server.crt file the PC uses.", style = MaterialTheme.typography.bodySmall)
                 }
-                Spacer(Modifier.width(8.dp))
-                Text("The server.crt file the PC uses.", style = MaterialTheme.typography.bodySmall)
+                Field("Sign-up code", code, { code = it }, secret = true,
+                    supporting = "The server's token: on the server, sudo secretspace-setup show-token")
             }
-            Field("Sign-up code", code, { code = it }, secret = true,
-                supporting = "The server's token: on the server, sudo secretspace-setup show-token")
             Field("Username", username, { username = it })
             Field("Master password", password, { password = it }, secret = true)
             val (label, fraction) = Passwords.strength(password)
@@ -88,9 +98,9 @@ fun CreateScreen(state: AppState) {
                 supporting = if (again.isNotEmpty() && again != password) "The two passwords differ." else
                     "Nobody can reset it for you: keep it in your head, or written down somewhere safe.")
             Spacer(Modifier.height(12.dp))
-            Button(onClick = { state.startCreate(url, certificate, code, username, password) },
-                enabled = state.busy == null && url.length > 8 && username.isNotBlank() && password.isNotEmpty() &&
-                    password == again,
+            Button(onClick = { state.startCreate(url.takeIf { onServer }, certificate, code, username, password) },
+                enabled = state.busy == null && (!onServer || url.length > 8) && username.isNotBlank() &&
+                    password.isNotEmpty() && password == again,
                 modifier = Modifier.fillMaxWidth()) { Text("Next") }
             Spacer(Modifier.height(24.dp))
         }
@@ -200,7 +210,7 @@ fun CreateCheckScreen(state: AppState) {
             for (n in words) {
                 Field("Word $n", typed.value.getValue(n), { v -> typed.value = typed.value + (n to v); error = null })
             }
-            Field("Sign-up code", code, { code = it; creating.code = it }, secret = true,
+            if (creating.url != null) Field("Sign-up code", code, { code = it; creating.code = it }, secret = true,
                 supporting = "The server's token, as in step 1")
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(12.dp))
@@ -214,6 +224,19 @@ fun CreateCheckScreen(state: AppState) {
                 }
             }, enabled = state.busy == null, modifier = Modifier.fillMaxWidth()) { Text("Create account") }
             TextButton(onClick = { state.cancelCreate() }) { Text("Cancel") }
+        }
+    }
+}
+
+/** One of two choices: the whole row is the radio button, read out with its label. */
+@Composable
+private fun Choice(selected: Boolean, label: String, detail: String, onSelect: () -> Unit) {
+    Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)) {
+        RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(end = 8.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.titleSmall)
+            Text(detail, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

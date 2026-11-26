@@ -153,6 +153,71 @@ object AccountSync {
         return session
     }
 
+    // ------------------------------------------------------------------ an account made here goes on a server
+    /** POST /v2/accounts with the server's token as the sign-up code; refusals in words. */
+    internal fun signUp(server: AccountServer, code: String, username: String, body: JsonObject) {
+        try {
+            server.token = code
+            server.request("POST", "/v2/accounts", body)
+        } catch (e: Conflict409) {
+            throw SyncError("The server already has an account called “$username” with another master " +
+                "password or Secret Key — or it is someone else's. Nothing was changed.")
+        } catch (e: LoginFailed) {
+            throw LoginFailed("The server did not accept that sign-up code.")
+        } finally {
+            server.token = ""
+        }
+    }
+
+    /** The logged-in account's personal vault must be this one, or it is another account of that name. */
+    internal fun checkPersonalVault(server: AccountServer, username: String, vaultHex: String) {
+        if (server.me().text("personal_vault") != vaultHex) throw SyncError(
+            "The server's account “$username” has a different personal vault: it is another account " +
+                "with the same name. Nothing was changed.",
+        )
+    }
+
+    /**
+     * Put ``account`` -- one on this phone only -- on the server at ``url``
+     * and remember it (the PC's account_sync.connect). If the server has the
+     * account already (put there from another device) the login simply
+     * works; otherwise it is made there with the server's token as the
+     * sign-up code. Returns "created" or "joined". Nothing is remembered
+     * unless it worked; the next Sync puts the vaults there.
+     */
+    fun connect(account: Account, url: String, caFile: String, signUpCode: String): String {
+        val login = account.loginKey ?: throw SyncError("Lock and unlock the account once, then connect.")
+        val server = AccountServer(url.trim(), caFile)
+        server.checkApi()
+        var outcome = "joined"
+        try {
+            try {
+                server.login(account.username, login)
+            } catch (e: LoginFailed) {
+                if (signUpCode.isBlank()) throw LoginFailed(
+                    "The server has no such account yet. Enter the server's sign-up code to create it there.")
+                val files = account.sealedFiles()
+                signUp(server, signUpCode.trim(), account.username, JsonObject(mapOf(
+                    "username" to JsonPrimitive(account.username),
+                    "login_key" to JsonPrimitive(ac.b64(login)),
+                    "keyset" to JsonPrimitive(files.getValue("keyset")),
+                    "recovery" to JsonPrimitive(files.getValue("recovery")),
+                    "public_key" to JsonPrimitive(ac.b64(ac.publicKeyOf(account.keyset))),
+                    "signing_key" to JsonPrimitive(account.signingKey),
+                    "recovery_proof" to JsonPrimitive(ac.b64(ac.recoveryProof(account.keyset))),
+                    "personal_vault" to JsonPrimitive(account.personalId),
+                )))
+                server.login(account.username, login)
+                outcome = "created"
+            }
+            checkPersonalVault(server, account.username, account.personalId)
+        } finally {
+            server.logout()
+        }
+        account.setServer(server.url, caFile)
+        return outcome
+    }
+
     // ------------------------------------------------------------------ the list of vaults
     class VaultChanges {
         val added = mutableListOf<String>()
