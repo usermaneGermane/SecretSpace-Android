@@ -201,16 +201,22 @@ class VaultFile internal constructor(
     val hasFile get() = path.exists()
     val canWrite get() = role != AccountStore.ROLE_READER && hex !in tooNew
 
-    private fun noteLevel(data: JsonObject) {
-        if (Disk.tooNew(data)) tooNew[hex] = Disk.neededVersion(data) else tooNew.remove(hex)
+    private fun noteLevel(data: Obj) {
+        if (Entries.tooNew(data)) tooNew[hex] = Entries.neededVersion(data) else tooNew.remove(hex)
     }
 
-    fun encrypt(data: JsonObject): String = ac.encryptVault(key, id, generation, Disk.checkVault(data))
-    fun encryptForServer(data: JsonObject): String = ac.encryptVault(key, id, generation, Disk.checkVault(data), fmt)
-    fun decrypt(blob: String): JsonObject = Disk.checkVault(ac.decryptVault(key, blob, id))
+    /** ``data`` under this vault's key, as this device stores it (validated in place, as on the PC). */
+    fun encrypt(data: Obj): String = ac.encryptVault(key, id, generation, Py.json(Entries.validateVault(data)))
+
+    /** ... and as the server and the other members' apps expect it: in the vault's own format. */
+    fun encryptForServer(data: Obj): String =
+        ac.encryptVault(key, id, generation, Py.json(Entries.validateVault(data)), fmt)
+
+    /** A blob of this vault, in either format (it must name this vault). */
+    fun decrypt(blob: String): Obj = Entries.validateVault(Py.native(ac.decryptVault(key, blob, id)))
 
     /** The vault's data; falls back to .bak like the PC does. */
-    fun load(): JsonObject {
+    fun load(): Obj {
         var first: Exception? = null
         for (file in listOf(path, File(path.path + Disk.BACKUP_SUFFIX))) {
             if (!file.exists()) continue
@@ -224,21 +230,24 @@ class VaultFile internal constructor(
         throw first ?: NoSuchElementException("The vault “$name” is missing on this device.")
     }
 
-    fun save(data: JsonObject) {
+    fun save(data: Obj) {
         Disk.rotateBackup(path)
         Disk.writeText(path, encrypt(data))
         noteLevel(data)
     }
 
     /** The vault as last agreed with the server, or null. */
-    fun loadBase(): JsonObject? = try {
+    fun loadBase(): Obj? = try {
         decrypt(Disk.readText(basePath))
     } catch (e: Exception) {
         null
     }
 
-    fun saveBase(data: JsonObject, origin: JsonObject) =
-        Disk.writeText(basePath, encrypt(data.with(Disk.BASE_ORIGIN_KEY to origin)))
+    fun saveBase(data: Obj, origin: Obj) {
+        val copy: Obj = LinkedHashMap(data)
+        copy[Disk.BASE_ORIGIN_KEY] = origin
+        Disk.writeText(basePath, encrypt(copy))
+    }
 
     fun sealedName(): String = ac.sealVaultName(key, id, name, fmt)
     fun openName(sealed: String): String = ac.openVaultName(key, id, sealed)
@@ -370,7 +379,7 @@ class Account internal constructor(
         val key = ac.newVaultKey()
         val wrapped = ac.wrapKey(ac.publicKeyOf(keyset), key, id, username)
         val made = VaultFile(vaultsFolder, id, key, clean, false)
-        made.save(Disk.emptyVault())
+        made.save(Entries.emptyVault())
         writeVaults(extra().with(made.hex to JsonObject(mapOf(
             "name" to JsonPrimitive(clean), "wrapped_key" to JsonPrimitive(wrapped),
             "created_at" to JsonPrimitive(Disk.utcNow()), "on_server" to JsonPrimitive(false),
@@ -417,8 +426,8 @@ class Account internal constructor(
         if (data != null) new.save(data) else old.removeFiles()
         File(new.path.path + Disk.BACKUP_SUFFIX).delete()
         new.basePath.delete()
-        val origin = base?.obj(Disk.BASE_ORIGIN_KEY)
-        if (base != null && origin != null) new.saveBase(base.without(Disk.BASE_ORIGIN_KEY), origin)
+        val origin = Py.asObj(base?.remove(Disk.BASE_ORIGIN_KEY))
+        if (base != null && !origin.isNullOrEmpty()) new.saveBase(base, origin)
     }
 
     /** ``pending`` marks a name the server has not been told yet. */
@@ -446,7 +455,7 @@ class Account internal constructor(
 
     // -- the personal vault --------------------------------------------------
     fun loadVault() = vaultFile().load()
-    fun saveVault(data: JsonObject) = vaultFile().save(data)
+    fun saveVault(data: Obj) = vaultFile().save(data)
     val hasVaultFile get() = vaultFile().hasFile
 
     // -- the server ----------------------------------------------------------

@@ -50,7 +50,7 @@ class SignInTest {
         val store = AccountStore(File(s("phone_home")), cheap)
         val signed = signIn(store)
         val account = signed.account
-        val vaults = lab["vaults"]!!.jsonObject
+        val vaults = Py.asObj(Py.native(lab["vaults"]))!!
         val names = account.vaultIds().associateBy { account.vaultFile(it).name }
         assertEquals(vaults.keys, names.keys)
         for ((name, data) in vaults) assertEquals(data, account.vaultFile(names[name]).load(), name)
@@ -77,21 +77,25 @@ class SignInTest {
 
         // A vault made on the phone goes onto the server with its first entry.
         val made = again.createVault("Made on the phone")
-        val data = JsonObject(mapOf("accounts" to JsonArray(listOf(JsonObject(mapOf(
-            "id" to JsonPrimitive("phone-1"), "site" to JsonPrimitive("Phone ✓"),
-            "username" to JsonPrimitive("me"), "password" to JsonPrimitive("fr0m-the-phone"),
-        ))))))
+        val data = made.load()
+        Entries.addAccount(data, "Phone ✓", "me", "fr0m-the-phone")
         made.save(data)
         val server = AccountSync.loggedIn(again)
         try {
             assertEquals(listOf("Made on the phone"), AccountSync.reconcileVaults(again, server).uploaded)
-            val revision = server.putVault(made.hex, made.encryptForServer(data), 0)
-            made.saveBase(data, baseOrigin(server.url, revision))
         } finally {
             server.logout()
         }
-        File(s("phone_made")).writeText(JsonObject(mapOf(
-            "name" to JsonPrimitive(made.name), "data" to data)).toString(), Charsets.UTF_8)
+        val sync = VaultSync(again, null, made.hex)
+        try {
+            sync.prepare(made.load())
+            assertTrue(sync.firstPush && sync.hasWork())
+            sync.commit(made.load())
+        } finally {
+            sync.close()
+        }
+        File(s("phone_made")).writeText(Py.dumps(linkedMapOf("name" to made.name, "data" to made.load())),
+            Charsets.UTF_8)
     }
 
     @Test fun aServerThatGoesBackToAnOlderKeyOrSwapsOneIsRefused() {

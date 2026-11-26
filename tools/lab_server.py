@@ -30,6 +30,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 LAB = os.path.join(ROOT, "core", "build", "lab")
 TOKEN = "lab-token-that-is-long-enough"
 PW = "lab pass – ünïcode ✓"
+CAROL_PW = "carol's pass"
+PCS = {}                     # name -> that account, open on its PC
 
 split = sys.argv.index("--") if "--" in sys.argv else len(sys.argv)
 PC = os.path.abspath(sys.argv[1])
@@ -128,6 +130,87 @@ def start_server(cert, key):
     return httpd, f"https://127.0.0.1:{httpd.server_address[1]}"
 
 
+# ---------------------------------------------------------------------------
+# The PCs' side of the sync tests: the Kotlin test asks, the PC's code acts
+# ---------------------------------------------------------------------------
+def vaults_of(account):
+    out = {}
+    for vault_id in account.vault_ids():
+        file = account.vault_file(vault_id)
+        data = file.load()
+        checks = [changelog.check(line, file.hex, account.signing_key_for(line["by"]))
+                  for line in changelog.lines_of(data)]
+        out[file.name] = {"data": data, "log": checks, "role": account.vault_role(vault_id)}
+    return out
+
+
+def pc_action(name, body):
+    if name == "carol_edit":
+        device("pc-carol")
+        carol = PCS["carol"]
+        file = carol.vault_file()
+        data = file.load()
+        before = copy.deepcopy(data)
+        for entry in data["accounts"]:
+            if entry["site"] == "Mail":
+                vault.update_entry(entry, username="mail-from-pc")
+            if entry["site"] == "Bank":
+                vault.update_entry(entry, password="bank-from-pc")
+        changelog.record(data, before, carol.username, carol.keyset, file.hex)
+        file.save(data)
+        sync_all(carol)
+        return {}
+    if name in ("carol_sync", "bob_sync"):
+        who = name.split("_")[0]
+        device("pc-" + who)
+        sync_all(PCS[who])                         # sync_vault refuses conflicts
+        return {"vaults": vaults_of(PCS[who])}
+    if name == "check_folder":
+        os.environ["SECRETSPACE_DATA_DIR"] = os.path.join(body["home"], "data")
+        on_phone = accounts.unlock(body["username"], body["password"])
+        checks = {}
+        for vault_id in on_phone.vault_ids():
+            session = account_sync.AccountSync(on_phone, None, vault_id)
+            try:
+                session.prepare(session.file.load())
+                checks[session.file.name] = not session.has_work()
+            finally:
+                session.close()
+        return {"nothing_to_merge": checks}
+    raise KeyError(name)
+
+
+def start_control():
+    """POST /<action> with a JSON body: one PC-side step, answered in JSON."""
+    import http.server
+    lock = threading.Lock()
+
+    class Control(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_POST(self):
+            size = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(size) or b"{}")
+            try:
+                with lock:
+                    reply, status = pc_action(self.path.strip("/"), body), 200
+            except Exception as e:                      # the test shows it
+                import traceback
+                reply, status = {"error": f"{type(e).__name__}: {e}",
+                                 "trace": traceback.format_exc()}, 500
+            raw = json.dumps(reply, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+    control = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Control)
+    threading.Thread(target=control.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{control.server_address[1]}"
+
+
 def main():
     shutil.rmtree(LAB, ignore_errors=True)
     os.makedirs(LAB)
@@ -155,6 +238,25 @@ def main():
     with_server(bob, lambda s: account_sync.share_vault(
         bob, s, shared, account_sync.lookup_contact(bob, s, "alice"), accounts.ROLE_READER))
 
+    # carol: the sync tests (SyncTest) -- her phone and her PC take turns,
+    # and bob shares "Family" with her as an editor.
+    device("pc-carol")
+    made_carol = accounts.prepare_account("carol", CAROL_PW)
+    carol = made_carol.save()
+    assert account_sync.connect(carol, url, cert, TOKEN) == "created"
+    for site, password in (("Bank", "bank-0"), ("Mail", "mail-0"), ("Shop", "shop-0")):
+        add(carol, None, site, password)
+    sync_all(carol)
+    device("pc-bob")
+    family = bob.create_vault("Family").hex
+    add(bob, family, "Wi-Fi", "w1f1")
+    sync_all(bob)
+    with_server(bob, lambda s: account_sync.share_vault(
+        bob, s, family, account_sync.lookup_contact(bob, s, "carol"), accounts.ROLE_EDITOR))
+    device("pc-carol")
+    sync_all(carol)
+    PCS.update({"carol": carol, "bob": bob})
+
     device("pc-alice")
     sync_all(alice)
     expected = {alice.vault_file(v).name: alice.vault_file(v).load() for v in alice.vault_ids()}
@@ -165,7 +267,9 @@ def main():
            "password": PW, "secret_key_text": made.secret_key_text, "phone_home": phone_home,
            "vaults": expected, "roles": {"Team": "owner", "From Bob": "reader"},
            "bob_fingerprint": bob.fingerprint,
-           "phone_made": os.path.join(LAB, "phone-made.json")}
+           "phone_made": os.path.join(LAB, "phone-made.json"),
+           "carol": {"username": "carol", "password": CAROL_PW, "secret_key_text": made_carol.secret_key_text},
+           "control": start_control()}
     lab_file = os.path.join(LAB, "lab.json")
     with open(lab_file, "w", encoding="utf-8") as f:
         json.dump(lab, f, indent=1, ensure_ascii=False)
@@ -174,7 +278,8 @@ def main():
     command = list(COMMAND)
     if command and os.path.isfile(os.path.join(ROOT, command[0])):
         command[0] = os.path.join(ROOT, command[0])
-    code = subprocess.call(command, cwd=ROOT, env=dict(os.environ, SECRETSPACE_LAB=lab_file))         if command else 0
+    env = dict(os.environ, SECRETSPACE_LAB=lab_file)
+    code = subprocess.call(command, cwd=ROOT, env=env) if command else 0
     if code != 0:
         print("the command failed:", code)
         return code
