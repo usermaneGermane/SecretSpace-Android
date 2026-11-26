@@ -69,6 +69,10 @@ fun Root(state: AppState) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (val screen = state.screen) {
                 Screen.SignIn -> SignInScreen(state)
+                Screen.Create -> CreateScreen(state)
+                Screen.CreateKit -> CreateKitScreen(state)
+                Screen.CreateWords -> CreateWordsScreen(state)
+                Screen.CreateCheck -> CreateCheckScreen(state)
                 is Screen.Unlock -> UnlockScreen(state, screen.username)
                 Screen.Vault -> VaultScreen(state)
                 is Screen.Entry -> EntryScreen(state, screen.vaultId, screen.entryId)

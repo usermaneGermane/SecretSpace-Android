@@ -19,15 +19,19 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.usermanegermane.secretspace.AppState
+import io.github.usermanegermane.secretspace.Biometric
 import io.github.usermanegermane.secretspace.Screen
 
 /** An account that already exists on your server comes onto this phone. */
@@ -68,6 +72,9 @@ fun SignInScreen(state: AppState) {
         Button(onClick = { state.signIn(url, certificate, username, password, kit) {} },
             enabled = state.busy == null && url.length > 8 && username.isNotBlank() && password.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()) { Text("Sign in") }
+        OutlinedButton(onClick = { state.screen = Screen.Create }, modifier = Modifier.fillMaxWidth()) {
+            Text("Create a new account")
+        }
         if (accounts.isNotEmpty()) {
             TextButton(onClick = { state.screen = Screen.Unlock(accounts.first()) }) {
                 Text("Back to the accounts on this phone")
@@ -83,6 +90,15 @@ fun UnlockScreen(state: AppState, username: String) {
     var kit by remember { mutableStateOf("") }
     var chosen by remember { mutableStateOf(username) }
     val accounts = state.store.listAccounts()
+    val activity = LocalContext.current as FragmentActivity
+    val fingerprint = Biometric.canOpen(activity, chosen)
+    fun withFingerprint() {
+        state.away = true
+        Biometric.unlock(activity, chosen, { pw -> state.away = false; state.unlockWithFingerprint(chosen, pw) },
+            { why -> state.away = false; if (why != null) state.say(why) })
+    }
+    // Ask at once, as the PC does with Windows Hello; the password stays there to type instead.
+    LaunchedEffect(chosen) { if (fingerprint && state.busy == null) withFingerprint() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
         Text("SecretSpace", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
@@ -101,6 +117,8 @@ fun UnlockScreen(state: AppState, username: String) {
             enabled = state.busy == null && password.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
             Text("Unlock")
         }
+        if (fingerprint) OutlinedButton(onClick = { withFingerprint() }, enabled = state.busy == null,
+            modifier = Modifier.fillMaxWidth()) { Text("Unlock with fingerprint") }
         TextButton(onClick = { state.screen = Screen.SignIn }) { Text("Sign in to another account") }
     }
 }

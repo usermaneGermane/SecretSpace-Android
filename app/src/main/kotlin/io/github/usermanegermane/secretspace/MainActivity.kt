@@ -2,13 +2,14 @@ package io.github.usermanegermane.secretspace
 
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.fragment.app.FragmentActivity
 import io.github.usermanegermane.secretspace.ui.Root
 import io.github.usermanegermane.secretspace.ui.SecretSpaceTheme
 
-class MainActivity : ComponentActivity() {
+/** A FragmentActivity: the fingerprint prompt (androidx.biometric) needs one. */
+class MainActivity : FragmentActivity() {
     private val state get() = (application as SecretSpaceApp).state
 
     override fun onCreate(savedInstanceState: Bundle?) {

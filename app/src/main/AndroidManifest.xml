@@ -5,6 +5,8 @@
     <!-- Only to read a 2FA QR code, and only when asked to. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <!-- Unlock with fingerprint, face or the phone's PIN, when turned on in Settings. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- No cloud backup and no device-to-device copy: the vaults stay on this
          phone and on your own server, nowhere else. -->
@@ -26,5 +28,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Autofill: only Android may bind it, and only once it is chosen in Android's settings. -->
+        <service
+            android:name=".autofill.FillService"
+            android:exported="true"
+            android:label="SecretSpace"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data android:name="android.autofill" android:resource="@xml/autofill_service" />
+        </service>
+        <activity
+            android:name=".autofill.FillActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>

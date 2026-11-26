@@ -32,6 +32,7 @@ TOKEN = "lab-token-that-is-long-enough"
 PW = "lab pass – ünïcode ✓"
 CAROL_PW = "carol's pass"
 PCS = {}                     # name -> that account, open on its PC
+SERVER = {}                  # url, ca_file: for a PC that signs in
 
 split = sys.argv.index("--") if "--" in sys.argv else len(sys.argv)
 PC = os.path.abspath(sys.argv[1])
@@ -43,6 +44,7 @@ import account_crypto                                              # noqa: E402
 import account_sync                                                # noqa: E402
 import accounts                                                    # noqa: E402
 import changelog                                                   # noqa: E402
+import recovery                                                    # noqa: E402
 import secretspace_server                                          # noqa: E402
 import vault                                                       # noqa: E402
 
@@ -182,6 +184,20 @@ def pc_action(name, body):
         device("pc-" + who)
         sync_all(PCS[who])                         # sync_vault refuses conflicts
         return {"vaults": vaults_of(PCS[who])}
+    if name == "pc_sign_in":           # {who, password, secret_key_text, phrase}: an account made on the phone
+        who = body["who"]
+        device("pc-" + who)
+        account, _ = account_sync.sign_in(SERVER["url"], SERVER["ca_file"], who, body["password"],
+                                          body["secret_key_text"])
+        sync_all(account)
+        PCS[who] = account
+        vaults = vaults_of(account)
+        device("pc-" + who + "-recovery")              # a PC without the account: the server's copy
+        opened = recovery.open_with_phrase(who, body["phrase"], SERVER["url"], SERVER["ca_file"])
+        device("pc-" + who)
+        return {"vaults": vaults, "fingerprint": account.fingerprint,
+                "phrase_opens_it": account_crypto.public_key_of(opened.keyset) ==
+                account_crypto.public_key_of(account.keyset)}
     if name == "check_folder":
         os.environ["SECRETSPACE_DATA_DIR"] = os.path.join(body["home"], "data")
         on_phone = accounts.unlock(body["username"], body["password"])
@@ -234,6 +250,7 @@ def main():
     cert, key = certificate(LAB, "server")
     other, _ = certificate(LAB, "impostor")
     httpd, url = start_server(cert, key)
+    SERVER.update(url=url, ca_file=cert)
 
     device("pc-alice")
     made = accounts.prepare_account("alice", PW)
@@ -297,7 +314,7 @@ def main():
            "erin": {"username": "erin", "password": "erin's pass",
                     "secret_key_text": made_erin.secret_key_text},
            "carol": {"username": "carol", "password": CAROL_PW, "secret_key_text": made_carol.secret_key_text},
-           "control": start_control()}
+           "sign_up_code": TOKEN, "control": start_control()}
     lab_file = os.path.join(LAB, "lab.json")
     with open(lab_file, "w", encoding="utf-8") as f:
         json.dump(lab, f, indent=1, ensure_ascii=False)

@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.usermanegermane.secretspace"
         minSdk = 26                 // java.nio.file and java.time, which :core uses
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"       // = secretspace.core.AppVersion.VERSION (a test checks)
+        versionCode = 2
+        versionName = "0.2.0"       // = secretspace.core.AppVersion.VERSION (a test checks)
     }
 
     buildFeatures { compose = true; buildConfig = true }
@@ -68,5 +68,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.7.0")
     implementation("androidx.camera:camera-view:1.7.0")
     implementation("com.google.zxing:core:3.5.4")
+    // Unlock with fingerprint, face or the phone's PIN (the Android Keystore + the system's prompt).
+    // 1.4.0, not the last stable 1.1.0: androidx.core 1.19 made the fingerprint helper 1.1.0 uses on
+    // Android 8-9 a stub that always says "no sensor"; 1.4.0 carries its own (tested on API 26).
+    implementation("androidx.biometric:biometric:1.4.0-rc01")
+    implementation("androidx.fragment:fragment-ktx:1.9.1")
+    implementation("androidx.appcompat:appcompat:1.7.1")      // the theme the prompt's dialog needs
     testImplementation("junit:junit:4.13.2")
 }
