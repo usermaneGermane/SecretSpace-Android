@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.3): make an account
+a password manager with its own sync server. **Early version (0.4): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -21,6 +21,7 @@ on your own network. The iPhone app is a separate project.
 | 4. The app: list, details, edit, generator, 2FA codes (typed or scanned) | done (0.1.0) |
 | 5. A new account on the phone, fingerprint / face / PIN unlock, autofill | done (0.2.0) |
 | 6. An account on the phone only, put on a server later if you like | done (0.3.0) |
+| 7. The desktop's look: its colours, typeface, cards and tiles, light and dark | done (0.4.0) |
 
 ## Installing
 
@@ -50,6 +51,16 @@ copied password from the clipboard after 30 seconds, and keeps nothing in
 Android's cloud backup.
 
 ## What the app does
+
+It looks like SecretSpace on the PC (its design rules, "direction C"): the
+same colours in light and dark, following the phone's setting; the Manrope
+typeface (SIL Open Font License, shipped in the app as
+`assets/Manrope-OFL.txt`); cards without borders; one green button per
+screen for its main action; each site's letter on the same pastel tile as on
+the PC; dates written as the PC writes them. A test checks that every text
+colour is readable (WCAG AA) on every surface in both modes, and that no
+screen uses a colour of its own.
+
 
 - **Unlock with fingerprint** (Settings → Security), as Windows Hello on the
   PC: after a lock your fingerprint, face or, from Android 11, the phone's PIN
