@@ -314,7 +314,7 @@ object AccountSync {
     }
 
     // ------------------------------------------------------------------ signing in
-    class SignedIn(val account: Account, val personal: JsonObject?, val changes: VaultChanges)
+    class SignedIn(val account: Account, val personal: Obj?, val changes: VaultChanges)
 
     /**
      * Bring an account from the server onto this device: a new phone, or
@@ -369,11 +369,11 @@ object AccountSync {
             val account = store.adoptFromServer(name, me, keyset, secret, login, password, JsonObject(mapOf(
                 "url" to JsonPrimitive(url.trimEnd('/')), "ca_file" to JsonPrimitive(caFile),
             )))
-            var data: JsonObject? = null
+            var data: Obj? = null
             if (!hadIt || !account.hasVaultFile) {
                 val stored = server.getVault(me.text("personal_vault")!!)
                 val file = account.vaultFile()
-                data = stored.blob?.let { file.decrypt(it) } ?: Disk.emptyVault()
+                data = stored.blob?.let { file.decrypt(it) } ?: Entries.emptyVault()
                 file.save(data)
                 if (stored.blob != null) file.saveBase(data, baseOrigin(server.url, stored.revision))
             }
@@ -383,7 +383,7 @@ object AccountSync {
                 val file = account.vaultFile(vaultId)
                 if (file.personal || file.hasFile) continue
                 val stored = server.getVault(vaultId)
-                val fetched = stored.blob?.let { file.decrypt(it) } ?: Disk.emptyVault()
+                val fetched = stored.blob?.let { file.decrypt(it) } ?: Entries.emptyVault()
                 file.save(fetched)
                 if (stored.blob != null) file.saveBase(fetched, baseOrigin(server.url, stored.revision))
             }

@@ -33,10 +33,14 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      # Downloads kept between runs: fewer requests to Maven Central, which
+      # answers a burst of them with 429 Too Many Requests.
+      - uses: gradle/actions/setup-gradle@v4
       - name: Test data from the PC's code
         run: |
           python -m pip install -r pc/requirements.txt
           python tools/make_vectors.py pc/sourceFiles
+          python tools/make_merge_vectors.py pc/sourceFiles
       - name: Kotlin core, signing in to a real server the PC filled
         env:
           SECRETSPACE_LAB_REQUIRED: "1"

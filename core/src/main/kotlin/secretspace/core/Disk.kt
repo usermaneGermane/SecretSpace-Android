@@ -31,9 +31,6 @@ object Disk {
     const val BASE_SUFFIX = ".base"
     const val BASE_ORIGIN_KEY = "base_origin"
 
-    /** How much of a vault this version understands (vault.DATA_LEVEL). */
-    const val DATA_LEVEL = 1
-    const val NEEDS_KEY = "needs_app"
 
     private val USERNAME = Regex("^[A-Za-z0-9](?:[A-Za-z0-9._ -]{0,62})$")
     private val RESERVED = setOf("con", "prn", "aux", "nul") +
@@ -122,38 +119,6 @@ object Disk {
     fun JsonObject.with(vararg pairs: Pair<String, JsonElement>): JsonObject =
         JsonObject(this + pairs)
     fun JsonObject.without(key: String): JsonObject = JsonObject(this - key)
-
-    // ------------------------------------------------------------------ vault data
-    /**
-     * The shape a vault must have once it is open. The PC's validate_vault
-     * also fills in ids and tidies each entry's history; that comes with
-     * the merge (stage 3). Until then entries are kept exactly as they are.
-     */
-    fun checkVault(data: JsonElement): JsonObject {
-        if (data !is JsonObject) throw IllegalArgumentException("This file is not a SecretSpace vault.")
-        val accounts = data["accounts"] ?: throw IllegalArgumentException(
-            "This vault has no 'accounts' section; it may have been written by another program.",
-        )
-        if (accounts !is JsonArray) throw IllegalArgumentException("This vault's 'accounts' section is malformed.")
-        return data
-    }
-
-    fun emptyVault(): JsonObject = JsonObject(mapOf("accounts" to JsonArray(emptyList())))
-
-    fun neededLevel(data: JsonObject): Int {
-        val level = (data[NEEDS_KEY] as? JsonObject)?.get("level") as? JsonPrimitive ?: return 0
-        if (level.isString || level.booleanOrNull != null) return 0
-        return level.intOrNull?.takeIf { it > 0 } ?: 0
-    }
-
-    /** Changed by a SecretSpace whose changes this one could damage: read only. */
-    fun tooNew(data: JsonObject): Boolean = neededLevel(data) > DATA_LEVEL
-
-    fun neededVersion(data: JsonObject, platform: String = AppVersion.PLATFORM): String {
-        if (!tooNew(data)) return ""
-        val text = (data[NEEDS_KEY] as JsonObject)[platform]?.jsonPrimitive?.content ?: ""
-        return if (Regex("""\d{1,4}(\.\d{1,4}){0,2}""").matches(text)) text else ""
-    }
 
     /** Is version ``have`` below ``needed``? False for anything not a plain version. */
     fun older(have: String, needed: String?): Boolean {

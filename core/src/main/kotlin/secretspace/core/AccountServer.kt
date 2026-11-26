@@ -237,5 +237,4 @@ class AccountServer(url: String, private val caFile: String = "", private val ti
 }
 
 /** What a sync base records: the server and revision it was agreed at. */
-fun baseOrigin(url: String, revision: Int): JsonObject =
-    JsonObject(mapOf("url" to JsonPrimitive(url.trimEnd('/')), "revision" to JsonPrimitive(revision)))
+fun baseOrigin(url: String, revision: Int): Obj = linkedMapOf("url" to url.trimEnd('/'), "revision" to revision.toLong())
