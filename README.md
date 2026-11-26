@@ -15,8 +15,8 @@ on your own network. The iPhone app is a separate project.
 |---|---|
 | 1. The cryptography, byte for byte as on the PC | done |
 | 2. Accounts and vaults on the phone, sign-in from a server | done |
-| 3. Sync (the same three-way merge as the PC) | next |
-| 4. The app: list, details, edit, generator, 2FA codes (typed or scanned) | |
+| 3. Sync (the same three-way merge as the PC) | done |
+| 4. The app: list, details, edit, generator, 2FA codes (typed or scanned) | next |
 | 5. Fingerprint / face / PIN unlock, autofill | |
 
 ## How it is kept in step with the PC
@@ -27,6 +27,10 @@ cryptography, sync), tested on a PC without a phone.
 - `tools/make_vectors.py` makes test data **with the PC app's own code**;
   `core/src/test/resources/vectors.json` is that data, and the Kotlin tests
   must reproduce every byte of it.
+- `tools/make_merge_vectors.py` does the same for the merge, entry history,
+  the change log and moves: 169 merges and each way of settling them, with
+  the clock and fresh ids replaced by counters on both sides so that every
+  byte can be compared.
 - `tools/check_on_pc.py` goes the other way: the PC's code opens what the
   Kotlin code made.
 - `tools/lab_server.py` starts a real SecretSpace Server over HTTPS and fills
@@ -37,6 +41,18 @@ cryptography, sync), tested on a PC without a phone.
   made on the phone reaches the PC.
 - CI does all of this against the PC app's current `main` on every change and
   once a week.
+
+### Syncing (stage 3)
+
+The phone merges exactly as the PC does: three-way, against the copy last
+agreed with the server, so a change made on one side is never mistaken for a
+deletion on the other; a change on both sides is a question for the user,
+and whichever side loses is kept as an earlier version, an archived copy or
+a second entry. Each change is signed into the vault's change log. In the
+lab test the phone and a PC of the same account take turns, through a real
+server: changes, a conflict settled each way, an edit made while the
+question was open (refused, nothing lost), an entry added to a vault
+another account shares, and at the end the PC finds nothing left to merge.
 
 ### Signing in (stage 2)
 

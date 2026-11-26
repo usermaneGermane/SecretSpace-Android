@@ -37,6 +37,7 @@ jobs:
         run: |
           python -m pip install -r pc/requirements.txt
           python tools/make_vectors.py pc/sourceFiles
+          python tools/make_merge_vectors.py pc/sourceFiles
       - name: Kotlin core, signing in to a real server the PC filled
         env:
           SECRETSPACE_LAB_REQUIRED: "1"
