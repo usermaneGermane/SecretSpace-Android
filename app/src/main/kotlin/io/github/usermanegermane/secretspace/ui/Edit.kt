@@ -10,6 +10,10 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -66,25 +70,28 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
     var scanning by remember { mutableStateOf(false) }
     val totpProblem = Totp.check(totp)
     val back = { state.screen = if (entryId == null) Screen.Vault else Screen.Entry(vaultId, entryId) }
-    Column(Modifier.fillMaxSize()) {
-        Bar(if (entry == null) "New entry" else "Edit", back)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Field("Name", site, { site = it })
-            Field("Username", username, { username = it })
-            Field("Password", password, { password = it }, secret = true)
-            val (label, fraction) = Passwords.strength(password)
-            if (label.isNotEmpty()) {
-                LinearProgressIndicator(progress = { fraction.toFloat() }, modifier = Modifier.fillMaxWidth())
-                Text(label, style = MaterialTheme.typography.labelSmall)
+    Page(if (entry == null) "New entry" else "Edit entry", back) {
+        Body {
+            Card {
+                Field("Name", site, { site = it })
+                Field("Username", username, { username = it })
+                Field("Password", password, { password = it }, secret = true)
+                val (label, fraction) = Passwords.strength(password)
+                Meter(label, fraction)
+                QuietButton("Generate a password…", { generating = true })
+                Gap(Sp.s)
+                Field("Web address", url, { url = it }, keyboard = KeyboardType.Uri)
             }
-            TextButton(onClick = { generating = true }) { Text("Generate a password…") }
-            Field("Web address", url, { url = it }, keyboard = KeyboardType.Uri)
-            Field("2FA secret", totp, { totp = it }, supporting = totpProblem.ifEmpty {
-                "The text under the site's QR code, or an otpauth:// link" })
-            OutlinedButton(onClick = { scanning = true }) { Text("Scan the QR code") }
-            Field("Notes", notes, { notes = it }, singleLine = false)
-            Spacer(Modifier.padding(8.dp))
-            Button(onClick = {
+            Gap(Sp.m)
+            Card {
+                Field("2FA secret", totp, { totp = it }, error = totpProblem.isNotEmpty(), supporting = totpProblem.ifEmpty {
+                    "The text under the site's QR code, or an otpauth:// link" })
+                QuietButton("Scan the QR code", { scanning = true })
+                Gap(Sp.s)
+                Field("Notes", notes, { notes = it }, singleLine = false)
+            }
+            Gap(Sp.l)
+            MainButton("Save", {
                 val fields = mapOf("site" to site.trim(), "username" to username.trim(), "password" to password,
                     "url" to url.trim(), "totp" to totp.trim(), "notes" to notes)
                 if (entryId == null) {
@@ -95,8 +102,7 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
                     state.change { it.edit(vaultId, entryId, fields) }
                     state.screen = Screen.Entry(vaultId, entryId)
                 }
-            }, enabled = site.isNotBlank() && totpProblem.isEmpty() && state.busy == null,
-                modifier = Modifier.fillMaxWidth()) { Text("Save") }
+            }, Modifier.fillMaxWidth(), enabled = site.isNotBlank() && totpProblem.isEmpty() && state.busy == null)
         }
     }
     if (generating) GeneratorDialog({ generating = false }) { password = it; generating = false }
@@ -117,26 +123,29 @@ private fun GeneratorDialog(onDismiss: () -> Unit, onUse: (String) -> Unit) {
     var made by remember { mutableStateOf(Passwords.generate(20)) }
     fun again() { made = Passwords.generate(length.toInt(), upper, lower, digits, symbols) }
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Generate a password") },
+        onDismissRequest = onDismiss, containerColor = Look.c.card, shape = Radius.dialog,
+        title = { Text("Generate a password", style = Type.heading) },
         text = {
             Column {
-                Text(made, style = MaterialTheme.typography.titleMedium)
-                Text("Length ${length.toInt()}")
-                Slider(value = length, onValueChange = { length = it; again() }, valueRange = 8f..64f)
-                listOf(Triple("A-Z", upper) { v: Boolean -> upper = v }, Triple("a-z", lower) { v: Boolean -> lower = v },
-                    Triple("0-9", digits) { v: Boolean -> digits = v }, Triple("!@#", symbols) { v: Boolean -> symbols = v })
-                    .forEach { (name, on, set) ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = on, onCheckedChange = { set(it); again() })
-                            Text(name)
-                        }
-                    }
+                Text(made, style = Type.mono, color = Look.c.text, modifier = Modifier.fillMaxWidth()
+                    .clip(Radius.inner).background(Look.c.input).padding(Sp.m))
+                val (label, fraction) = Passwords.strength(made)
+                Meter(label, fraction)
+                Gap(Sp.s)
+                Text("Length ${length.toInt()}", style = Type.smallBold, color = Look.c.muted)
+                Slider(value = length, onValueChange = { length = it; again() }, valueRange = 8f..64f,
+                    colors = SliderDefaults.colors(thumbColor = Look.c.green, activeTrackColor = Look.c.green,
+                        inactiveTrackColor = Look.c.border))
+                listOf(Triple("Capitals A-Z", upper) { v: Boolean -> upper = v },
+                    Triple("Small letters a-z", lower) { v: Boolean -> lower = v },
+                    Triple("Digits 0-9", digits) { v: Boolean -> digits = v },
+                    Triple("Symbols !@#", symbols) { v: Boolean -> symbols = v })
+                    .forEach { (name, on, set) -> CheckRow(on, name, { set(it); again() }) }
             }
         },
-        confirmButton = { TextButton(onClick = { onUse(made) }) { Text("Use it") } },
-        dismissButton = { Row { TextButton(onClick = { again() }) { Text("Again") }
-            Spacer(Modifier.width(4.dp)); TextButton(onClick = onDismiss) { Text("Cancel") } } },
+        confirmButton = { MainButton("Use it", { onUse(made) }) },
+        dismissButton = { Row(horizontalArrangement = Arrangement.spacedBy(Sp.s)) {
+            QuietButton("Again", { again() }); QuietButton("Cancel", onDismiss) } },
     )
 }
 
@@ -159,9 +168,7 @@ private fun ScanDialog(state: AppState, onDismiss: () -> Unit, onFound: (String)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxSize()) {
             if (allowed) CameraPreview(onFound) { problem -> state.say(problem); onDismiss() }
-            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp)) {
-                Text("Cancel")
-            }
+            MainButton("Cancel", onDismiss, Modifier.align(Alignment.BottomCenter).padding(24.dp))
         }
     }
 }

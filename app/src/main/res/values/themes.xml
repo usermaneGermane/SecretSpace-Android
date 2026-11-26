@@ -2,5 +2,7 @@
 <resources>
     <!-- AppCompat, though the screens are Compose: on Android 8 the fingerprint prompt is the
          biometric library's own dialog, which needs an AppCompat theme (it crashed without one). -->
-    <style name="Theme.SecretSpace" parent="Theme.AppCompat.DayNight.NoActionBar" />
+    <style name="Theme.SecretSpace" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/window</item>
+    </style>
 </resources>

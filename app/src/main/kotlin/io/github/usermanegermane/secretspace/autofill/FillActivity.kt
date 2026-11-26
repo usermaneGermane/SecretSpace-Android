@@ -46,6 +46,24 @@ import io.github.usermanegermane.secretspace.ui.SecretSpaceTheme
 import secretspace.core.Matching
 import secretspace.core.Obj
 import secretspace.core.Py
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import io.github.usermanegermane.secretspace.ui.Avatar
+import io.github.usermanegermane.secretspace.ui.Card
+import io.github.usermanegermane.secretspace.ui.Gap
+import io.github.usermanegermane.secretspace.ui.Look
+import io.github.usermanegermane.secretspace.ui.MainButton
+import io.github.usermanegermane.secretspace.ui.Muted
+import io.github.usermanegermane.secretspace.ui.QuietButton
+import io.github.usermanegermane.secretspace.ui.RowCard
+import io.github.usermanegermane.secretspace.ui.Sp
+import io.github.usermanegermane.secretspace.ui.Type
 
 /**
  * What "Fill from SecretSpace" opens: unlock if locked, then the entries
@@ -76,13 +94,19 @@ class FillActivity : FragmentActivity() {
         setResult(Activity.RESULT_CANCELED)
         setContent {
             SecretSpaceTheme {
-                Scaffold { padding ->
-                    Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                        Text("Fill from SecretSpace", style = MaterialTheme.typography.titleLarge)
-                        Text(domain ?: app, style = MaterialTheme.typography.bodySmall)
-                        Spacer(Modifier.height(12.dp))
+                Scaffold(containerColor = Look.c.bg) { padding ->
+                    Column(Modifier.fillMaxSize().padding(padding).padding(Sp.l)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.width(Sp.s))
+                            Column {
+                                Text("Fill from SecretSpace", style = Type.heading, color = Look.c.text)
+                                Muted(domain ?: app, style = Type.caption)
+                            }
+                        }
+                        Gap(Sp.l)
                         if (state.open == null) Unlock() else Pick(domain, app) { entry -> fill(entry, userId, passId) }
-                        state.message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                        state.message?.let { Gap(Sp.s); Text(it, style = Type.small, color = Look.c.danger) }
                     }
                 }
             }
@@ -124,13 +148,23 @@ class FillActivity : FragmentActivity() {
         fun withFingerprint() = Biometric.unlock(this, name, { pw -> state.unlockWithFingerprint(name, pw) },
             { why -> if (why != null) state.say(why) })
         LaunchedEffect(name) { if (fingerprint) withFingerprint() }
-        Text(name, style = MaterialTheme.typography.titleMedium)
-        Field("Master password", password, { password = it }, secret = true)
-        Button(onClick = { state.unlock(name, password, null) { state.say("Open SecretSpace once to enter the Secret Key.") } },
-            enabled = state.busy == null && password.isNotEmpty(), modifier = Modifier.fillMaxWidth()) { Text("Unlock") }
-        if (fingerprint) OutlinedButton(onClick = { withFingerprint() }, enabled = state.busy == null,
-            modifier = Modifier.fillMaxWidth()) { Text("Unlock with fingerprint") }
-        state.busy?.let { Text(it) }
+        Card {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Avatar(name, 40.dp)
+                Spacer(Modifier.width(Sp.m))
+                Text(name, style = Type.leadBold, color = Look.c.text)
+            }
+            Gap(Sp.s)
+            Field("Master password", password, { password = it }, secret = true)
+            Gap(Sp.s)
+            MainButton("Unlock $name", { state.unlock(name, password, null) { state.say("Open SecretSpace once to enter the Secret Key.") } },
+                Modifier.fillMaxWidth(), enabled = state.busy == null && password.isNotEmpty())
+            if (fingerprint) {
+                Gap(Sp.s)
+                QuietButton("Unlock with fingerprint", { withFingerprint() }, Modifier.fillMaxWidth(), enabled = state.busy == null)
+            }
+        }
+        state.busy?.let { Gap(Sp.s); Muted(it) }
     }
 
     @Composable
@@ -143,17 +177,16 @@ class FillActivity : FragmentActivity() {
         val shown = if (query.isBlank()) suggested else all.filter { (_, e) ->
             listOf("site", "username", "url").any { Py.text(e, it).contains(query.trim(), ignoreCase = true) }
         }
-        Field("Search all entries", query, { query = it })
-        if (shown.isEmpty()) Text(if (query.isBlank()) "Nothing saved for this ${if (domain != null) "site" else "app"} " +
-            "yet: search for the entry." else "No entry matches.", style = MaterialTheme.typography.bodyMedium)
-        LazyColumn(Modifier.fillMaxWidth()) {
+        Field("Search all entries", query, { query = it }, showLabel = false)
+        if (shown.isEmpty()) Muted(if (query.isBlank()) "Nothing saved for this ${if (domain != null) "site" else "app"} " +
+            "yet: search for the entry." else "No entry matches.", Modifier.padding(vertical = Sp.s), Type.body)
+        val several = all.map { it.first }.distinct().size > 1
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 520.dp), verticalArrangement = Arrangement.spacedBy(Sp.s)) {
             items(shown) { (vault, e) ->
-                ListItem(headlineContent = { Text(Py.text(e, "site")) },
-                    supportingContent = { Text(Py.text(e, "username") + (if (all.map { it.first }.distinct().size > 1) " · $vault" else "")) },
-                    modifier = Modifier.clickable { pick(e) })
-                HorizontalDivider()
+                RowCard(Py.text(e, "site"), Py.text(e, "username") + (if (several) " · $vault" else ""), { pick(e) })
             }
         }
-        TextButton(onClick = { finish() }) { Text("Cancel") }
+        Gap(Sp.s)
+        QuietButton("Cancel", { finish() }, Modifier.fillMaxWidth())
     }
 }
