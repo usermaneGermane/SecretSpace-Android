@@ -14,3 +14,11 @@ dependencies {
 
 tests()
 fun tests() = tasks.test { useJUnitPlatform() }
+
+// tools/lab_server.py runs the tests against a real server and says where
+// it is; such a run is never "up to date".
+tasks.test {
+    environment("SECRETSPACE_LAB", System.getenv("SECRETSPACE_LAB") ?: "")
+    environment("SECRETSPACE_LAB_REQUIRED", System.getenv("SECRETSPACE_LAB_REQUIRED") ?: "")
+    if (!System.getenv("SECRETSPACE_LAB").isNullOrEmpty()) outputs.upToDateWhen { false }
+}
