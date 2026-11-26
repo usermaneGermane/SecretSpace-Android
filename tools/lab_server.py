@@ -160,6 +160,23 @@ def pc_action(name, body):
         file.save(data)
         sync_all(carol)
         return {}
+    if name == "edit":                 # {who, site, fields}: in the personal vault, then sync
+        device("pc-" + body["who"])
+        who = PCS[body["who"]]
+        file = who.vault_file()
+        data = file.load()
+        before = copy.deepcopy(data)
+        for entry in data["accounts"]:
+            if entry["site"] == body["site"]:
+                vault.update_entry(entry, **body["fields"])
+        changelog.record(data, before, who.username, who.keyset, file.hex)
+        file.save(data)
+        sync_all(who)
+        return {}
+    if name == "sync":
+        device("pc-" + body["who"])
+        sync_all(PCS[body["who"]])
+        return {"vaults": vaults_of(PCS[body["who"]])}
     if name in ("carol_sync", "bob_sync"):
         who = name.split("_")[0]
         device("pc-" + who)
@@ -257,6 +274,15 @@ def main():
     sync_all(carol)
     PCS.update({"carol": carol, "bob": bob})
 
+    # erin: the app's Sync with its questions (OpenAccountTest)
+    device("pc-erin")
+    made_erin = accounts.prepare_account("erin", "erin's pass")
+    erin = made_erin.save()
+    assert account_sync.connect(erin, url, cert, TOKEN) == "created"
+    add(erin, None, "Bank", "bank-0")
+    sync_all(erin)
+    PCS["erin"] = erin
+
     device("pc-alice")
     sync_all(alice)
     expected = {alice.vault_file(v).name: alice.vault_file(v).load() for v in alice.vault_ids()}
@@ -268,6 +294,8 @@ def main():
            "vaults": expected, "roles": {"Team": "owner", "From Bob": "reader"},
            "bob_fingerprint": bob.fingerprint,
            "phone_made": os.path.join(LAB, "phone-made.json"),
+           "erin": {"username": "erin", "password": "erin's pass",
+                    "secret_key_text": made_erin.secret_key_text},
            "carol": {"username": "carol", "password": CAROL_PW, "secret_key_text": made_carol.secret_key_text},
            "control": start_control()}
     lab_file = os.path.join(LAB, "lab.json")

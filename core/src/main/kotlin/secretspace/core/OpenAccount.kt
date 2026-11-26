@@ -1,0 +1,259 @@
+package secretspace.core
+
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+
+/** A change refused because the vault is someone else's to change, or a newer app's. */
+class ReadOnlyVault(message: String) : Exception(message)
+
+/**
+ * An unlocked account as the app shows it: every vault's data in memory,
+ * and the operations of the PC app's main window -- each change noted in
+ * the vault's signed change log and written at once, a reader's vault and a
+ * newer app's left alone, and Sync with its questions.
+ *
+ * Not thread-safe: the app calls it from one thread (or one at a time).
+ */
+class OpenAccount(val account: Account) {
+    val data = linkedMapOf<String, Obj>()
+
+    class VaultInfo(val id: String, val name: String, val role: String, val canWrite: Boolean,
+                    val shared: Boolean, val personal: Boolean, val goneFromServer: Boolean,
+                    val newerAppText: String)
+
+    /** Read every vault from disk; returns the names of those that could not be read. */
+    fun load(): List<String> {
+        data.clear()
+        val unreadable = mutableListOf<String>()
+        for (id in account.vaultIds()) {
+            val file = account.vaultFile(id)
+            try {
+                data[id] = if (file.hasFile) file.load() else Entries.emptyVault()
+            } catch (e: Exception) {
+                unreadable += file.name
+            }
+        }
+        return unreadable
+    }
+
+    fun vaults(): List<VaultInfo> = account.vaultIds().filter { it in data }.map { id ->
+        val file = account.vaultFile(id)
+        val needs = Entries.neededVersion(data.getValue(id))
+        VaultInfo(id, file.name, account.vaultRole(id), account.canWrite(id),
+            id != account.personalId && account.isShared(id), file.personal,
+            account.vaultRecord(id)["gone_from_server"]?.toString() == "true",
+            if (account.needsNewerApp(id)) (if (needs.isNotEmpty()) "SecretSpace $needs or newer" else "a newer SecretSpace") else "")
+    }
+
+    // ------------------------------------------------------------------ reading
+    /** vault.sort_accounts: by date (undated last) or by name, A-Z on ties. */
+    fun sorted(entries: List<Obj>, order: String = "modified_desc"): List<Obj> {
+        val nameKey = compareBy<Obj>({ Py.textNoOr(it, "site").lowercase() }, { Py.textNoOr(it, "username").lowercase() })
+        val byName = entries.sortedWith(if (order == "name_desc") nameKey.reversed() else nameKey)
+        if (order != "modified_desc" && order != "modified_asc") return byName
+        val dated = byName.filter { Py.truthy(it["updated_at"]) }
+            .sortedBy { Py.str(it["updated_at"]) }.let { if (order == "modified_desc") it.reversedStable() else it }
+        return dated + byName.filter { !Py.truthy(it["updated_at"]) }
+    }
+
+    /** A descending stable sort: equal keys keep their A-Z order, as Python's sort(reverse=True) does. */
+    private fun List<Obj>.reversedStable(): List<Obj> =
+        withIndex().sortedWith(compareByDescending<IndexedValue<Obj>> { Py.str(it.value["updated_at"]) }
+            .thenBy { it.index }).map { it.value }
+
+    /** The entries of a vault the list shows: live (or archived), matching ``query``. */
+    fun entries(vaultId: String, query: String = "", archived: Boolean = false,
+                order: String = "modified_desc"): List<Obj> {
+        val all = Entries.accountsOf(data.getValue(vaultId)).filter { Entries.isArchived(it) == archived }
+        val q = query.trim().lowercase()
+        val found = if (q.isEmpty()) all else all.filter { e ->
+            listOf("site", "username", "url", "notes").any { Py.text(e, it).lowercase().contains(q) }
+        }
+        return if (archived) found.sortedByDescending { Py.text(it, "archived_at") } else sorted(found, order)
+    }
+
+    fun find(vaultId: String, entryId: String): Obj? = data[vaultId]?.let { Entries.findEntry(it, entryId) }
+
+    // ------------------------------------------------------------------ changing
+    /**
+     * Change a vault: ``change`` edits its data, then what changed goes into
+     * the signed change log and the vault is written. Nothing is written,
+     * and [ReadOnlyVault] raised, for a vault this account may only read.
+     */
+    fun <T> change(vaultId: String, change: (Obj) -> T): T {
+        val file = account.vaultFile(vaultId)
+        if (!account.canWrite(vaultId)) throw ReadOnlyVault(
+            if (account.needsNewerApp(vaultId)) "“${file.name}” was changed by a newer SecretSpace: update this one to change it."
+            else "“${file.name}” is shared with you for reading only.",
+        )
+        val current = data.getValue(vaultId)
+        val before = Py.deepCopyObj(current)
+        val working = Py.deepCopyObj(current)
+        val result = change(working)
+        Changelog.record(working, before, account.username, account.keyset, file.hex, file.fmt)
+        file.save(working)
+        data[vaultId] = working
+        return result
+    }
+
+    fun add(vaultId: String, site: String, username: String, password: String, notes: String = "",
+            totp: String = "", url: String = ""): Obj =
+        change(vaultId) { Entries.addAccount(it, site, username, password, notes, totp, url) }
+
+    fun edit(vaultId: String, entryId: String, fields: Map<String, String?>): Boolean = change(vaultId) {
+        Entries.updateEntry(Entries.findEntry(it, entryId) ?: throw NoSuchElementException("That entry is gone."), fields)
+    }
+
+    fun archive(vaultId: String, entryId: String) = change(vaultId) { Entries.archiveAccount(it, entryId) }
+    fun restore(vaultId: String, entryId: String) = change(vaultId) { Entries.restoreAccount(it, entryId) }
+    fun purge(vaultId: String, entryId: String) = change(vaultId) { Entries.purgeAccount(it, entryId) }
+    fun revert(vaultId: String, entryId: String, rid: String) = change(vaultId) {
+        Entries.revertEntry(Entries.findEntry(it, entryId) ?: return@change false, rid)
+    }
+    fun clearHistory(vaultId: String, entryId: String) = change(vaultId) {
+        Entries.findEntry(it, entryId)?.let { e -> Entries.clearHistory(e) }
+    }
+
+    /** Move a live entry to another vault; the original goes once the copy has arrived. */
+    fun move(fromId: String, entryId: String, toId: String): Obj? {
+        if (!account.canWrite(toId)) throw ReadOnlyVault("“${account.vaultFile(toId).name}” is shared with you for reading only.")
+        var moved: Obj? = null
+        change(fromId) { source ->
+            val target = Py.deepCopyObj(data.getValue(toId))
+            moved = Entries.move(source, target, entryId, toId) ?: return@change
+            change(toId) { t -> t.clear(); t.putAll(target) }
+        }
+        finishMoves()
+        return moved
+    }
+
+    // ------------------------------------------------------------------ housekeeping
+    /** vault.archive_purge_days: 0 = keep archived entries until deleted by hand. */
+    fun purgeDays(vaultId: String): Int {
+        val raw = data[vaultId]?.get("archive_purge_days")
+        val days = when (raw) {
+            is Long -> raw.toInt()
+            is String -> raw.trim().toIntOrNull() ?: 0
+            is Double -> raw.toInt()
+            is Boolean -> if (raw) 1 else 0
+            else -> 0
+        }
+        return if (days in 1..3650) days else 0
+    }
+
+    fun setPurgeDays(vaultId: String, days: Int) = change(vaultId) {
+        if (days > 0) it["archive_purge_days"] = days.toLong() else it.remove("archive_purge_days")
+    }
+
+    private val ARCHIVED_AT = Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z""")
+
+    /** Archived entries past each vault's keep-for limit go; returns how many. */
+    fun autoPurge(now: Instant = Instant.now()): Int {
+        var total = 0
+        for (id in data.keys.toList()) {
+            val days = purgeDays(id)
+            if (days == 0 || !account.canWrite(id)) continue
+            val cutoff = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
+                .format(now.minus(days.toLong(), ChronoUnit.DAYS))
+            val doomed = Entries.accountsOf(data.getValue(id)).filter {
+                Entries.isArchived(it) && it["archived_at"] is String &&
+                    ARCHIVED_AT.matches(it["archived_at"] as String) && (it["archived_at"] as String) < cutoff
+            }.map { it["id"] as String }
+            if (doomed.isEmpty()) continue
+            change(id) { d -> doomed.forEach { Entries.purgeAccount(d, it) } }
+            total += doomed.size
+        }
+        return total
+    }
+
+    /** moves.arrived_in + settle: originals whose copy is on the server (or on disk) go. */
+    fun finishMoves(): List<String> {
+        val synced = mutableMapOf<String, Set<Any?>>()
+        fun arrived(vaultId: String?, entryId: String?): Boolean {
+            if (vaultId == null || vaultId !in data) return false
+            val ids = synced.getOrPut(vaultId) {
+                val file = account.vaultFile(vaultId)
+                val there = try {
+                    if (account.server != null) file.loadBase() else if (file.hasFile) file.load() else null
+                } catch (e: Exception) {
+                    null
+                }
+                Entries.accountsOf(there ?: Entries.emptyVault()).map { it["id"] }.toSet()
+            }
+            return entryId in ids
+        }
+        val changed = mutableListOf<String>()
+        for (id in data.keys.toList()) {
+            if (!account.canWrite(id)) continue
+            val probe = Py.deepCopyObj(data.getValue(id))
+            if (Entries.settle(probe, ::arrived) > 0) {
+                change(id) { d -> Entries.settle(d, ::arrived) }
+                changed += id
+            }
+        }
+        return changed
+    }
+
+    // ------------------------------------------------------------------ Sync
+    class SyncReport {
+        val changes = mutableListOf<String>()
+        val readOnly = mutableListOf<String>()
+        val tooNew = mutableListOf<String>()
+        val leftForLater = mutableListOf<String>()
+        var vaultList: AccountSync.VaultChanges? = null
+    }
+
+    /**
+     * One press of Sync (the PC's account_sync_ui.run_sync): log in once,
+     * make the list of vaults the same here and there, then sync each vault.
+     * When one has conflicts, ``decide(vault name, result)`` is asked for a
+     * choice per conflict id (Merge.KEEP_*), or null to leave that vault for
+     * the next Sync. Runs on a worker thread; ``decide`` may wait for the user.
+     */
+    fun sync(decide: (String, Merge.Result) -> Map<String, String>?): SyncReport {
+        val report = SyncReport()
+        val server = AccountSync.loggedIn(account)
+        try {
+            report.vaultList = AccountSync.reconcileVaults(account, server)
+            val queue = AccountSync.syncableVaults(account, server).toMutableList()
+            load()
+            var movesDone = false
+            while (true) {
+                if (queue.isEmpty() && !movesDone) {
+                    movesDone = true
+                    queue += finishMoves().filter { it in AccountSync.syncableVaults(account, server) }
+                }
+                val id = queue.removeFirstOrNull() ?: break
+                syncOne(server, id, decide, report, retry = true)
+            }
+        } finally {
+            server.logout()
+        }
+        return report
+    }
+
+    private fun syncOne(server: AccountServer, id: String, decide: (String, Merge.Result) -> Map<String, String>?,
+                        report: SyncReport, retry: Boolean) {
+        val session = VaultSync(account, server, id)
+        val name = session.file.name
+        try {
+            val local = data.getValue(id)
+            val result = session.prepare(local)
+            if (!session.hasWork()) return
+            val choices = if (result.conflicts.isEmpty()) null else decide(name, result) ?: run {
+                report.leftForLater += name
+                return
+            }
+            data[id] = session.commit(local, choices)
+            if (result.pulled > 0 || result.conflicts.isNotEmpty()) report.changes += "$name: ${result.summary()}"
+            if (!account.canWrite(id) && result.needsPush) report.readOnly += name
+        } catch (e: Conflict409) {
+            if (!retry) throw e
+            syncOne(server, id, decide, report, retry = false)      // the server moved on: merge again
+        } catch (e: NeedsNewerApp) {
+            report.tooNew += name
+        }
+    }
+}
