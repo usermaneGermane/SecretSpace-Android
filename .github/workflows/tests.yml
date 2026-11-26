@@ -1,0 +1,46 @@
+name: tests
+
+# The Kotlin core against the PC client's CURRENT code: the test data is
+# made again from SecretSpace-Client-Windows main on every run, and what the
+# Kotlin port makes is opened by the PC's code. A format change on the PC
+# that the phone does not follow fails here.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: usermaneGermane/SecretSpace-Client-Windows
+          path: pc
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Test data from the PC's code
+        run: |
+          python -m pip install -r pc/requirements.txt
+          python tools/make_vectors.py pc/sourceFiles
+      - name: Kotlin core
+        run: ./gradlew --no-daemon :core:test
+      - name: The PC opens what Kotlin made
+        run: python tools/check_on_pc.py pc/sourceFiles
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: core/build/reports/tests

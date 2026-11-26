@@ -1,0 +1,323 @@
+{
+ "source": "SecretSpace-Client-Windows sourceFiles/account_crypto.py",
+ "argon2id": [
+  {
+   "secret": "cGFzc3dvcmQ=",
+   "salt": "6TtH6DpCMmPW0waDui3PyQ==",
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "out": "lvUQflwATh8AbP4j3rb7lkC0PI54Q2Rm1MaVFxsbSUI="
+  },
+  {
+   "secret": "cMOkc3N3w7ZyZC3DvA==",
+   "salt": "vA7GiA+kKSipJlPu/COtPA==",
+   "passes": 2,
+   "memory_kib": 256,
+   "lanes": 2,
+   "out": "Tv+YKLVfHnP5DkKqebD1MbH70ybEB1sMewM8sxBETck="
+  },
+  {
+   "secret": "",
+   "salt": "Um4Ubrb1hwfwnTpWs8hjcQ==",
+   "passes": 3,
+   "memory_kib": 65536,
+   "lanes": 1,
+   "out": "wutkMezcF8waMHHEG57dtXZC/j380d2zrtYXS0dLllk="
+  }
+ ],
+ "secret_keys": [
+  {
+   "raw": "FplVVEWNgcO/29qKLqHLJQ==",
+   "text": "A4-C2MVK-VCFRW-A4HP6-33KFC5-IOLEUD"
+  },
+  {
+   "raw": "qNjWqvXd6u8TfOyspAkRuw==",
+   "text": "A4-VDMNN-KXV3X-VO6E3-45SWKI-CIRXMZ"
+  },
+  {
+   "raw": "uENZGl8R1pFHG03YL+sjTA==",
+   "text": "A4-XBBVS-GS7CH-LJCRY-3JXMC7-2ZDJQH"
+  },
+  {
+   "raw": "ofJaobASqKlXm3oJ4wUhKw==",
+   "text": "A4-UHZFV-INQCK-UKSV4-3PIE6G-BJBFM7"
+  },
+  {
+   "raw": "rubcmDc4RTg+6KvTCyXVUw==",
+   "text": "A4-V3TNZ-GBXHB-CTQPX-IVPJQW-JOVKMV"
+  }
+ ],
+ "secret_key_spellings": [
+  {
+   "text": "a4 c2mvk vcfrw a4hp6 33kfc5 ioleud",
+   "raw": "FplVVEWNgcO/29qKLqHLJQ=="
+  },
+  {
+   "text": "A3-C2MVK-VCFRW-A4HP6-33KFC5-IOLEUY",
+   "raw": "FplVVEWNgcO/29qKLqHLJQ=="
+  }
+ ],
+ "secret_key_errors": [
+  {
+   "text": "",
+   "error": "Enter your Secret Key (it starts with A4-)."
+  },
+  {
+   "text": "B4-AAAAA",
+   "error": "A Secret Key starts with A4- (A3- on an Emergency Kit from SecretSpace 3); check your Emergency Kit."
+  },
+  {
+   "text": "A4-C2MVK-VCFRW-A4HP6-33KFC5-IOLEU",
+   "error": "A Secret Key has 27 characters after A4-; this one has 26."
+  },
+  {
+   "text": "A4-C2MVK-VCFRW-A4HP6-33KFC5-IOLEAD",
+   "error": "That Secret Key has a typo; check it against your Emergency Kit."
+  },
+  {
+   "text": "A4-C20VK-VCFRW-A4HP6-33KFC5-IOLEUD",
+   "error": "A Secret Key uses only A-Z and 2-7; this one also has 0 (0 and 1 are never used: did you mean O or I?)."
+  },
+  {
+   "text": "A4-C2MVK-VCFRW-A4HP6-33KFC5-IOLEUA",
+   "error": "That Secret Key has a typo; check it against your Emergency Kit."
+  }
+ ],
+ "account_keys": [
+  {
+   "password": "correct horse",
+   "username": "alex",
+   "salt": "Ahta70lPMEneK2jZN+UcKQ==",
+   "secret_key": "hRJutdsb4Gtxv5WL1iUiuw==",
+   "format": 2,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "0ZfirbGGVE8WIMh4MXwvelXKr9RMIz8t/HX0JZpDUiY=",
+   "login_key": "JpmA1Py5fkfverUQQG3k90PTm/ue93x1VPRR+2WmFuc="
+  },
+  {
+   "password": "correct horse",
+   "username": "alex",
+   "salt": "Ahta70lPMEneK2jZN+UcKQ==",
+   "secret_key": "hRJutdsb4Gtxv5WL1iUiuw==",
+   "format": 1,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "SHJ9NV77mde2e1MDu/9D/D/BLBJ0okR4F/EmdT+/xgA=",
+   "login_key": "3+SLLk4/90y6noQ8W9KKrbAlXX5wPaiBh/IZUAZ0ICM="
+  },
+  {
+   "password": "ﬁancé Ω",
+   "username": "Mária",
+   "salt": "GVnOOS5o3M5RlZUlA+ihow==",
+   "secret_key": "LmV8i4tetl4uD6vnqkbBNw==",
+   "format": 2,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "Wq8Dl37xyQAUwGqKeJsvebggFZJOQ/VCCBF30IVTipQ=",
+   "login_key": "Poy5DzuVBDmpiRL0vBCEf+7i1KtFFydjOr7EAUr51AM="
+  },
+  {
+   "password": "ﬁancé Ω",
+   "username": "Mária",
+   "salt": "GVnOOS5o3M5RlZUlA+ihow==",
+   "secret_key": "LmV8i4tetl4uD6vnqkbBNw==",
+   "format": 1,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "FopVZDbrgSRvVoTHna+XhPAf6ufRzRpHmkPAErCPD2U=",
+   "login_key": "ECOhlpW2iJCortL0MlyCVVyM0qKfeqNBRSzC+secgKY="
+  },
+  {
+   "password": "x",
+   "username": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "salt": "QBJxT+R6kUnG2Tr2tFoF6Q==",
+   "secret_key": "0x15Dr4selO6fqInCYPTMQ==",
+   "format": 2,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "Di1MfJOS0DbSLuTbkDU7XN6t+/vEEJMRVeXBNEi+OeU=",
+   "login_key": "dEks0j6uBwty4wWvNVYJI+qh16EsCYbn/FNZD9bj6gc="
+  },
+  {
+   "password": "x",
+   "username": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "salt": "QBJxT+R6kUnG2Tr2tFoF6Q==",
+   "secret_key": "0x15Dr4selO6fqInCYPTMQ==",
+   "format": 1,
+   "passes": 1,
+   "memory_kib": 64,
+   "lanes": 1,
+   "auk": "YF/U2eCrttgCrfGzKadfzscuuPm/nZP4IApnCWS/QMA=",
+   "login_key": "qEpGXeAZo4u1GXjLs5Zd+R/rRO/EKI/ATdAuS8V3GC0="
+  }
+ ],
+ "keysets": [
+  {
+   "username": "alex",
+   "password": "lab-pass-1",
+   "secret_key": "iTLukkqiyI1TNqS3QC2VgA==",
+   "sealed": "U1NLNAIBAAAAQAEB7NDyy35cAYPAGnHLHKgBO489Ln1SAjCOWHWGrS2h5NwrdkEmycaUMdi6tYAIjEJA9iOOn3w3a5+A+aIYRsTeqlG70Rfr4KR/tPEFl2TFbiSID7oMEWclajFKwPPpqPV8Cmn9Dyb+NAHgzKC9Nf16niqxwRGlVYP8Tif7c4XJj5Bx72cHhfWs1erf0HvtgHMfIgQKPNOdlDEiQa1cGr1I0zfB5srYkDH9I3rlNm7VmKC8j/87m2GW4FiMjQfLA0EItSWRsnUA8VOF8j56VEAW5rmTk5DGOOpZp8fJsND3wyEaJWo7hdkP/+yuyX6/TnF++NxLWNrplE7g31jNJk5HReNp8GvrSRvLfid8eqlDLP0hQwXVFBf5nLD4wnsXpOiM6gS6CVVUWDXTIPPReZOa",
+   "format": 2,
+   "login_key": "kifvBFd3UtqWmWmzmnjtshotSpaWABNgI5sSdpC+NMo=",
+   "keyset": {
+    "ed25519_seed": "3YaBoAWjNyVzGFBWBTNrDmBEkrDKnVJ8pE9eGNDSBjY=",
+    "personal_vault_key": "EvB+pgbbhTICCqrJjs2Bl/DAKNRUnj8XCOfX8jTGRnQ=",
+    "recovery_proof": "OD0S88l9iv45y4Rk2HzpuWiSTBc9sEdinh1w614StDc=",
+    "x25519_private": "wzJWF27u7vJLKXjT4Ns9R81lP7Np3/Rv2RW4SUNe9/A="
+   },
+   "public_key": "oULvtYVITCQLObGgx+veelb1OS3yx+zdwEjfLGwYvW4=",
+   "signing_key": "9IQDd8Hg7FY4OZ3sNsucXK4xEbn4r/nk7fDtOeXBSNc=",
+   "fingerprint": "5553 9351 7039 5663 6533 8682",
+   "signature_of_hello": "cvjDno0UMdQvcc2ItUUMUKkTEx/EhyxtzEh6Lga93/iZMtLFZ8jg5pkgq7lFhDoDUEGtxFKklwg8NzuVkY1FAg==",
+   "recovery_proof": "OD0S88l9iv45y4Rk2HzpuWiSTBc9sEdinh1w614StDc="
+  },
+  {
+   "username": "alex",
+   "password": "lab-pass-1",
+   "secret_key": "BSMa8Kat3/JQu4X92P38sg==",
+   "sealed": "UE1LMwEBAAAAQAEBleenInUREp1eNCo6UpgakyFis0Py72CCdMG3QQPT5OF8rweOw1g1ZPO/edvz8Ey4NLT4/SpmliGHochvd1oi1tWNWL3GEIkfy5sSfzCh1IQCLcR5vQR+vEut+0aCIGLUbsYuoJ3sVUzfFUB0mvpKR+e8YAzRPvPoUKblm1cNmN0ooI9tyaAruzKxemVHlMCQ1iT+xMDE9dXAHkgiiM8Ip5Zg1FSq7srh/gWNB4iP2cp1",
+   "format": 1,
+   "login_key": "6l7czte9YAcZxnd5IKPTY6lsL32hqjTinxxYnds1GxE=",
+   "keyset": {
+    "personal_vault_key": "c2UXmcGN3ifR3Sz323DTtItPjISHoQl2dW8JNokr43o=",
+    "x25519_private": "hhEpmNOzE1AOsnj35wlGtW9ZUybxuonhHF0F95uusVU=",
+    "ed25519_seed": "BuobSQ35GJLIiUtERUHe7KBRiHXrogV6F8S0uROUyEU=",
+    "recovery_proof": "N+K9g3+248NCaVIMHlWtW1ShNApfn00/2WV72Ci1BCA="
+   },
+   "public_key": "00zYqcG/CrVoNCaghQ5ImqcThvyWw3mv30mNOGmkXUc=",
+   "signing_key": "KshipAcmyq9HRvN8/LVVXwacfWALkAuqYBmUceyXd9s=",
+   "fingerprint": "8513 3169 8710 6731 3769 1241",
+   "signature_of_hello": "e0oHh2+FlVWAL3IGFsIEwljsacCEcuVvcnQ9FICBDRusnsO5AZGOGrSkvdDzZAQK2v+6M9N0pyT8eugHdY8FCw==",
+   "recovery_proof": "N+K9g3+248NCaVIMHlWtW1ShNApfn00/2WV72Ci1BCA="
+  }
+ ],
+ "phrases": [
+  {
+   "entropy": "ASEZRokjEq7wQ0ysOPIACg==",
+   "phrase": "abuse angle faculty banner couple first scissors hat promote shy length betray",
+   "username": "alex",
+   "recovery_key": "VyHAD0U6uXtfuA5A7vQJTmm6MIpc7tLSOPUhHtvYn7I=",
+   "recovery_key_old": "EzE6uesN3Dgo0VgVXqxSSOxdlOgtMow1xDECfVl8AJM=",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMx3zEEQY98CkipW3y+/p2BswoGt5aliHUNblNAoiN+3o1+v8/rpk1sDasXhFz+AYTqfXTbuVHu4N0MZ5Blbf7ha5+2trzMofwwfPQQpuM3vnFJy3WMxillhnfdz8YouWk6I8fDvAaJeDWzCeVoBqUcPcPqm6Ty2zQM2j8S5ovn0sFprEkj61dlR5Thmmm9ics3ZbYuFjnGOcGirg4H4Ao/+iNbcoP2BuT5ia3eDMLAeOKDbq7p9l8Q0Ns1Se1a6JZfKp6BABPjaP6Y2mzrDQJf9Tmpt1Q2Xbr26e88v0U5BdNLMZajrCnJjv08obdcjueqd86lG8D4k6NnKiMpPn2XBmlUEYwFkb7JRqd1hTObo3Tv1l/Nz4LObkauD0TX1",
+   "keyset": {
+    "x25519_private": "G0yY4cetOygNNpFZxRjjOXFBggsbP0oR3zEQ32iuclk=",
+    "personal_vault_key": "RJSqLYFlBzHrrVTXasDZGQIEVFVA2/qFntd69luCm1M=",
+    "ed25519_seed": "1ix132AiHFawKEBNMt3tS8OCoYohIsbUc+6UiVzOJHs=",
+    "recovery_proof": "WyNG/vbaBwimcWdJyLnD/xQ2oDkYzj3DwNYTz+lOALA="
+   }
+  },
+  {
+   "entropy": "FyabbKN/Cev4nJFm3GABzw==",
+   "phrase": "blame crumble swamp eight vacuum vote tiny mutual grocery toast about pair",
+   "username": "alex",
+   "recovery_key": "7HuU1f+Uu37CEwIgLSoi+Cak09yqBMihkoYDg1VXyN4=",
+   "recovery_key_old": "Z28wwWI8Jr2gG9i8CWQyXjs4pKkbQtZEnMPoI4Sp0H8=",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACmWQxhBl9CQaqY7QQWqV2/4V9D6QrFTBz5tl60O0PSh8VWmPp/L//YyvB0QMI/DUI+6MLavsn+H2dTv61O3/Z1WuFmBA2YgKi1jM4Jzruiz3JLUyVxjBiWEiEYtjGh1rAOgbobcXK/eHIyEMrHNFPZJRg/7EiYOCXsNoailtcQurAk31VFeLiq46zpYDd4isB5ESrMexq7ALOQk1UnE37mHyULJ5NKl1I6Xa8ZOfTSREeh+twpwE30F7183AtfN4ib3GqOEbUIHrrBptXTx5Ctyp7dawLS4tcUKdXmtjp6xR/FT7sesswaRsFDa1wfj0mMKhAqr9oIa7KUxb60JTx+KRLvPta9dL65cBtIZrkmNsrsvPR/ldV83FpOO3lV",
+   "keyset": {
+    "x25519_private": "RJSqLYFlBzHrrVTXasDZGQIEVFVA2/qFntd69luCm1M=",
+    "personal_vault_key": "1ix132AiHFawKEBNMt3tS8OCoYohIsbUc+6UiVzOJHs=",
+    "ed25519_seed": "WyNG/vbaBwimcWdJyLnD/xQ2oDkYzj3DwNYTz+lOALA=",
+    "recovery_proof": "Tat/G7VNXbIi+VMnR4GNH8tlubEwzwrsM3aVE1fK+z0="
+   }
+  },
+  {
+   "entropy": "PSvqVJ1yQsZooW/GNhvxSw==",
+   "phrase": "diamond gap news depend category glimpse penalty combine shiver radio wisdom note",
+   "username": "alex",
+   "recovery_key": "r07i3aPJO5lJpxqqa2gmhNbe9v+Bn0UCFTgT5gJFvXU=",
+   "recovery_key_old": "i/GQJmbAI/dRWv6zVth1K6EtzNBSUpbC+TxOx6igH64=",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwBby/atPNT/e7A0rjsKQSgHb1KI6egB/pfzFaGX5rstsIHqQp/l+XpWpcfppEw1Zamg9wIkYFBEoLLYuAE4INura8LrrA7VEAMSwyBVKtcOVQ7IKdLD7OpDWaA7UmbgdQ3VvWnMJaoyP2T/PC1vetWRQAO69/pL83hSBtOIUtoTrZPMXuaDggvaUwc88elVn9ELgbXyftTqd6bL37KT0w/hZKcGs6MPEYNAeoxwYw6msTtEj6NySerGbWI9F5Cl8jTxG+AQPouHTFTeNdXH+RNoCp8vXhpSYmFiwt78gSTtaUiMb8l4dMc5RuQEnRF+F2VLPZbCeEPN/V5VaRb6L0MxHOoPfSqQHn7ZCN/GEaVfPlBxWWt27/RA7oE8IZf",
+   "keyset": {
+    "x25519_private": "1ix132AiHFawKEBNMt3tS8OCoYohIsbUc+6UiVzOJHs=",
+    "personal_vault_key": "WyNG/vbaBwimcWdJyLnD/xQ2oDkYzj3DwNYTz+lOALA=",
+    "ed25519_seed": "Tat/G7VNXbIi+VMnR4GNH8tlubEwzwrsM3aVE1fK+z0=",
+    "recovery_proof": "jJplMnfHtctibGr1B+Q3TGb/UdM6C88dYiN5KxprKJk="
+   }
+  }
+ ],
+ "phrase_errors": [
+  {
+   "phrase": "abuse angle faculty banner couple first scissors hat promote shy length",
+   "error": "The recovery phrase has 12 words; 11 were entered."
+  },
+  {
+   "phrase": "abuse angle faculty banner couple first scissors hat promote shy length notaword",
+   "error": "Not in the word list: 12. “notaword”. Check the spelling against your paper."
+  },
+  {
+   "phrase": "angle abuse faculty banner couple first scissors hat promote shy length betray",
+   "error": "Those words are all in the list, but not in this order: two may be swapped or one replaced."
+  }
+ ],
+ "vaults": [
+  {
+   "format": 2,
+   "vault_id": "HJ1RUtMkMS6JadPdJgSJzA==",
+   "vault_key": "6l4tH7PIwwNjDM9h3/ZuvVF0XutjwNljVjMC9RSN14U=",
+   "member": "alex",
+   "wrapped": "AhAsNTghXgCw9jAa/t7WKm/QaiQIa/zHniIVM9PdBbwO8KssSXR9e6/3fx13e6gAOvft+9RF3zLDUNjjhz/RoJq+xVqVxIsS89JUXtPX7TNIBCCCNjCmOAB1c4lQ",
+   "blob": "U1NWNAEcnVFS0yQxLolp090mBInMAAAAByB4D2CNc76VMB7sPWfiIY+wypBNHXhR/ajZlpThCK6LA1CqqBZF6ruuAZjdObqrKgIUUE6hVC7npSeD25PGk2c/ldrImk6Z51J8yqQA2TyoOcn4RRvDHBhjY+YI1sMyONBhbupJsD1BETW69SsSeIpM+OlARTXZpwAEAB1npQx6PXtyICvVf4jx4apUdAlTd6Ou/UKrTRq0kEgnXsvkO2dpR+tfxbULokDzvmV4NzVp9A1coQ==",
+   "key_generation": 7,
+   "data": {
+    "accounts": [
+     {
+      "id": "e1",
+      "site": "Bänk",
+      "username": "alex",
+      "password": "p€ss \"q\"",
+      "notes": "line1\nline2"
+     }
+    ],
+    "settings": {
+     "archive_purge_days": 30
+    }
+   },
+   "name": "Wörk ✓",
+   "sealed_name": "uVSx8DmocOYXFLLyTBrER4STMQj0y0ZYJL/32em+yJbzjj2ixA=="
+  },
+  {
+   "format": 1,
+   "vault_id": "HJ1RUtMkMS6JadPdJgSJzA==",
+   "vault_key": "6l4tH7PIwwNjDM9h3/ZuvVF0XutjwNljVjMC9RSN14U=",
+   "member": "alex",
+   "wrapped": "AZ7kvQU2DeyOCHGF/KrOqxjNoffzTnv+E6Mf7Omvei4I0NqNoaPZ8Um/xva1+ENWzsEGxc768XQBSbg3DR/E3KgF28qjHUpENdGjP6z2osgW91Q9PE16QhqWazGo",
+   "blob": "UE1WMwEcnVFS0yQxLolp090mBInMAAAAByjCqFYKtkaRRGOm+kHiEh+ksp2G+Dnnai42pap8nbeTQwhXT1GMmsM83Xn0Zdvl/dSoIJwSQ91tGPkN5AYes6FAIf0jtH6sjnQKM6+Ci5AFbk8mzA6a54RsX10iUmvgUBHxFRYM6F5IHoEX5mezWHn1zW1mGKYekU/wzYuPCbI8uc5iTYUlSItyROxHY/di4KfjNa8hkflEQdHVgPLUEf4eirC7IN4l6gAUQoPdPnI8wMt2kQ==",
+   "key_generation": 7,
+   "data": {
+    "accounts": [
+     {
+      "id": "e1",
+      "site": "Bänk",
+      "username": "alex",
+      "password": "p€ss \"q\"",
+      "notes": "line1\nline2"
+     }
+    ],
+    "settings": {
+     "archive_purge_days": 30
+    }
+   },
+   "name": "Wörk ✓",
+   "sealed_name": "Cc9+qq75dzcf9oYzsV5pvwDBwvK9+1+nvAP9vKZWCRvFJ6HUOA=="
+  }
+ ],
+ "completed_keyset": {
+  "in": {
+   "x25519_private": "KrdRuFdKJ7zjm0rIIMYnPRHXZrgjFxi+zllL3tH4jO8=",
+   "personal_vault_key": "vakmDscqTRhDWpX1qBZKqb5gZhcuauaIslx5vV9MUwI="
+  },
+  "out": {
+   "x25519_private": "KrdRuFdKJ7zjm0rIIMYnPRHXZrgjFxi+zllL3tH4jO8=",
+   "personal_vault_key": "vakmDscqTRhDWpX1qBZKqb5gZhcuauaIslx5vV9MUwI=",
+   "ed25519_seed": "5EaxjgMqzHiOJ/HmODeGKMXn3HhJk8SjtKjA5f5it7U=",
+   "recovery_proof": "8O8Qq2L0Ycwr+i5JmDhv0gl//KoYIUMLumC9hAC88jc="
+  }
+ }
+}
