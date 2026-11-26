@@ -190,6 +190,31 @@ v["secret_store"] = [{"username": user, "password": password, "secret": b64(seed
                      for n, (user, password) in enumerate([("alex", "lab-pass-1"),
                                                           ("Mária", "ﬁancé Ω")])]
 
+# -- 2FA codes (totp.py) and the strength meter (password_generator.py) -------
+import totp                                                    # noqa: E402
+import password_generator                                      # noqa: E402
+v["totp"] = []
+for stored in ["JBSWY3DPEHPK3PXP", "jbsw y3dp-ehpk 3pxp====", "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+               "otpauth://totp/Bank:me?secret=JBSWY3DPEHPK3PXP&issuer=Bank",
+               "otpauth://TOTP/x?SECRET=jbswy3dpehpk3pxp&digits=8&period=60&algorithm=sha-256",
+               "otpauth://totp/x?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&algorithm=SHA512&digits=7",
+               "otpauth://totp/x?secret=JBSW%20Y3DP+EHPK3PXP&digits=&period=15"]:
+    params = totp.parse(stored)
+    v["totp"].append({"stored": stored, "digits": params.digits, "period": params.period,
+                      "algorithm": params.algorithm, "key": b64(params.key),
+                      "codes": [[at, totp.code(params, at), totp.seconds_left(params, at)]
+                                for at in (0, 59, 1111111109.5, 1234567890, 2000000000, 20000000000)]})
+v["totp_errors"] = [{"stored": t, "error": totp.check(t)} for t in [
+    "JBSW1Y3DP8EHPK3PXP", "JBSWY3DPEHPK3PX", "JBSWY3DP", "otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP",
+    "otpauth://totp/x?issuer=a", "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&algorithm=MD5",
+    "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=x", "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=9",
+    "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&period=0", "   ", "äöü!"]]
+v["spaced"] = {d: totp.spaced(d) for d in ["123456", "1234567", "12345678"]}
+v["strength"] = [[pw, *password_generator.estimate_strength(pw)] for pw in [
+    "", "a", "password", "P@ssw0rd123!", "aaaaaaaaaaaaaaaaaaaa", "abcdefgh", "qwertyuiopqwertyuiop",
+    "correct horse battery staple", "Tr0ub4dor&3", "x7$Kp!2qLm#9vR@w", "ünïcödé-pässwörd-✓",
+    "123456789", "zxcvbnm", "Summer2026!", "aB3$aB3$aB3$aB3$", "tEmP", "kq8Zr2Wx9Lp4Nv7T"]]
+
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w", encoding="utf-8", newline="\n") as f:
     json.dump(v, f, indent=1, ensure_ascii=False)

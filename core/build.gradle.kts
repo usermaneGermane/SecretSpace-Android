@@ -4,7 +4,12 @@ plugins {
     kotlin("jvm")
 }
 
-kotlin { jvmToolchain(21) }
+// Built with JDK 21, as bytecode for Java 17: what the Android build takes as it is.
+kotlin {
+    jvmToolchain(21)
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
+}
+java { targetCompatibility = JavaVersion.VERSION_17; sourceCompatibility = JavaVersion.VERSION_17 }
 
 dependencies {
     implementation("org.bouncycastle:bcprov-jdk18on:1.87")

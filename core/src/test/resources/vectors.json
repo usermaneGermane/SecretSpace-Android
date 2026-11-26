@@ -163,7 +163,7 @@
    "username": "alex",
    "password": "lab-pass-1",
    "secret_key": "iTLukkqiyI1TNqS3QC2VgA==",
-   "sealed": "U1NLNAIBAAAAQAEB7NDyy35cAYPAGnHLHKgBO1Rhz2219CRogmBitX5znICRNPFaW0CiOVJYA6a5Ih/hVC7eD5N80loWMH1CNOcxBZvxJKcu/CebKWfUVsn4/F7szGnpRkAEDg7k646h+GlD/CqCpMMVUXPWmLTMb8ocyry5R3Ie1TKXWLzHwasBPxrjnrIoI9NAktNqCVsNfSmZr08aAmwKyxmIUzimdiSbQnDiI37wRSw0ZZYjhu5TsRsnonozyl0usUelg1OJ1O8nSMagC32dzMYSqL0OK0FgSIlaZlNA8N13gpdfNg6Ud/eJUq9AmgTvGrvSkmS0wrS6DLMByFhsTL7+sRHDXVJLA9UYdO7e5vu3cabV3pM0cWBm0XsWExPOP9DNxtvWQ/eC5bDmFeXWZaYsXSUXgEBY",
+   "sealed": "U1NLNAIBAAAAQAEB7NDyy35cAYPAGnHLHKgBO4FpKM2RLrMXzaVfgxvgT2hiik7EoCJ8guEOKsMRVAhqg/qJVLGW+0ZQbtJelU7mkzvqi/TveghJzwJUAG/pUKfo9zKTbPXuvXxsttNQeBqbOOU6TkOjA4BeEefHPeif6WQ90KAXiJLYtcWlNpci3zAttAoAkPf4JM0o/BK0ZJ4MstRLqVluNrYWrCSgJMGtdmR1TFv/cw2G6Sc9UJCoZlnkONdfUJOXngFErtCtiopgyst3JQjU9cd8h2DUq1v/uy1RJm/0o2Tgp5wFI8xEvbU6ViPFA5XSkGPUtkuj3mgt328JnSOoCNgc2bJLLalgQOcJ75aFVxh1hlvEpLghaxjIowt5ZKFZusDlKl+oOPf716U8lkddlpUDzCgw9hYe",
    "format": 2,
    "login_key": "kifvBFd3UtqWmWmzmnjtshotSpaWABNgI5sSdpC+NMo=",
    "keyset": {
@@ -205,7 +205,7 @@
    "username": "alex",
    "recovery_key": "VyHAD0U6uXtfuA5A7vQJTmm6MIpc7tLSOPUhHtvYn7I=",
    "recovery_key_old": "EzE6uesN3Dgo0VgVXqxSSOxdlOgtMow1xDECfVl8AJM=",
-   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVBkcwLnTU5KwgwZ11ir6svZywsXw55I/+HS/+n2FoD46DCtDyvkyE17QG0/3SkiVdzHD/9vnKmrZtDEXhobgW56smXdKN2zpkCAckEuXorXikqmzS/CNH+z6SBvir+7oIgLtpxk3di03Jqf/dO0RaVjvzAAvAyYFI2rrACg+yuh938LrPu9Oo0+oP85UGTduUM0Ds9UcbbSZ/QEQ1ENxMpVSYxgIF25yNARmx8poFdQLJAQsI4o2ZXxWEGVtRhWQTVVde4ECwfiAbMomqVZKlEeArgzhFiAuCokSHKJh4UKKnAGr2XSKtBUbUgo5Ku2uu2ug/T9IeDPgCbTD9SLjRKD6I8vADHBWDxQsDtG+uQ5SHMMY99MXFKRIeF0s8R",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPtOykzTW6lXKv1YlZAa1x3uXsQS+deLxMGiFEB/oOPp8vDEc45VgwJtFjI9tru9U0+GEAt55PZqbdpEikyg7Jilux/KZ4pBWmMxjdfTs/6ynuno4v1E054jChoJ8RzjnSYUF63e6SUzDpSt24oKpZNSHujsKRPMec4k6nA/qhcWfj05OEhWZJ5TBS/JIGy5uKNa1kekzYuACzcWTyDELdeXgTKwPBXZU7UMLCe4oTSMGx2Y3klo/q6jtzu7iJmedpGNwoPenJ6VWs9yniHdevGQWM/yFcKG7YrfPvxlirJ1UHsF9VIfJwBSLPYwTgXjUTAzZHUrbv9wR/siGGPvDLHitXvLoA32PEOZRLA2HBmstdV3ZJUcfKwvTzKQBn2j",
    "keyset": {
     "x25519_private": "G0yY4cetOygNNpFZxRjjOXFBggsbP0oR3zEQ32iuclk=",
     "personal_vault_key": "RJSqLYFlBzHrrVTXasDZGQIEVFVA2/qFntd69luCm1M=",
@@ -219,7 +219,7 @@
    "username": "alex",
    "recovery_key": "7HuU1f+Uu37CEwIgLSoi+Cak09yqBMihkoYDg1VXyN4=",
    "recovery_key_old": "Z28wwWI8Jr2gG9i8CWQyXjs4pKkbQtZEnMPoI4Sp0H8=",
-   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALBUmRru23GldbaHsGTVpRqSqulwJ3sogMFgAb7a2ZY5/N8By0KwL0Ix95sW7P+D1lVyIJHe/IkKVIA1VysBTn6ycRncjw2RHjKzzYikHEK3/AHK6tiQKarw0FKYmr/6sXiKYTHOtrySo8tFmZTtPm98ZcHn/KOUKJOiAYTnxlEvhGGYyXYegQ8BGMgUgSkkJ+iOy7qI9WtQHWmPrHKXmz1wtMxJ7lvJHGHag4fF4VZMimmg8h4zuZanD+siHT/2BD/Vq0sUjfpiRboGOoKJAEtH41aQnLrB5eLzFytaHuIBLedjsDkCSNNA1cRy6lnus4uzIwp9LolRfX9yb6tdpk7v7AUqy/yG988La6KYn3bhIUFL5sGOQUK4U3fYlQjk",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMyVga0rhMCNp03NSiZQCZoWWn0YGz7SMKZa5yDd5zzWUEp5LGaNGV6/0wFNnhoRomoS0Y1SNZ6c/gUDA5lZDCzdhgXfWn8dvjk0/nMWDMN+JIkMbeoiaihvVU1HeU/Ny4e7Stl+kW1HOaMWc9zPniT4XsL5AkWBOOyGG6JJcRK4z5fFvg+A02loVc/op+WSU0tcY8HsiULSH8j1QZfaaBXzajzYu2Z5oo+utFs/UTaiLGci841aB53tjaUrUSUNapdZnK3MkVrPlaIwkdIbZu6VCwk0X2fmf867Qn15y9YZyW2SH34jY/onpRQCcd+x6VG7GuVolupCSgJh4QCJCDOwI/TkF8r4gpaC2+RD99q68qQo3dgM0D2CGLbCp3pW",
    "keyset": {
     "x25519_private": "RJSqLYFlBzHrrVTXasDZGQIEVFVA2/qFntd69luCm1M=",
     "personal_vault_key": "1ix132AiHFawKEBNMt3tS8OCoYohIsbUc+6UiVzOJHs=",
@@ -233,7 +233,7 @@
    "username": "alex",
    "recovery_key": "r07i3aPJO5lJpxqqa2gmhNbe9v+Bn0UCFTgT5gJFvXU=",
    "recovery_key_old": "i/GQJmbAI/dRWv6zVth1K6EtzNBSUpbC+TxOx6igH64=",
-   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJW+LKYtAhHATypgbXvuiqYBGgIaJhAFxrhb2jqUWICpWx0hgS1fjeSOU0bxn/FQuyHs4qA8qLOYj+I3LCSR1t7eYkWBSG33rKVMCfbfB3vdTafkmO0R/U/Y3sGuX+71ggJ7ZHGMRwIUTrhDBOIqmHCXwmfx4TjgNG8HZRHoCZdCVg1hK/XLvEQtrOwICl2xkhV0L3i7DKs+Vqkvj4bvugO61btFQN9SpiUDaoMTjQi2vhJkVZMGmdTypQEpq52BnKGwCEhkCdaK96WH12FmohGzdpVWhr2PyA4Hvz6dXDCAdayZlwSuLyCYW46pu8QKM+hNfnzH7Hga4T3MuYvWFZ3IJAvT7MuwOp4xxUDgkOV9MsSOYAmuVPwny/bh9M8R",
+   "sealed_recovery": "U1NLNAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKceB+Cd5p/6Fy5vhT+QJXQgOCTOWK1A25kbUp1l+ZXCOVIx7YgVwCQOp77PUPSvMsMryKjCEKfr9cIXqTGF/gqIVH/OIxOcSd7wVQztFSPMgl5f8CUass2Pob567B9fVmmP4dM7Zf5dKETFYQ//RyhVxvCVt+zdRSSUOe56eD9ITk9YyrdRJBZfA1ByKQyLsVHHzj+5Cs6Nm2vgt8zItdsZaUu0jnX6lTZthLYey7i4t00tODRShUFAsTP8q82FGDjy+fn+e5VXP1ZbKCkKnw20IXXmq449sljZL6Djguz6e2+jgrS7p4j+WFR3YzGrisZD1PLiheOtKoQVmo+DaaZXtHWpZk46Yz15+sHdZ2mW27T467TtijZvAt054gv",
    "keyset": {
     "x25519_private": "1ix132AiHFawKEBNMt3tS8OCoYohIsbUc+6UiVzOJHs=",
     "personal_vault_key": "WyNG/vbaBwimcWdJyLnD/xQ2oDkYzj3DwNYTz+lOALA=",
@@ -262,8 +262,8 @@
    "vault_id": "HJ1RUtMkMS6JadPdJgSJzA==",
    "vault_key": "6l4tH7PIwwNjDM9h3/ZuvVF0XutjwNljVjMC9RSN14U=",
    "member": "alex",
-   "wrapped": "Ag6nxbQkT/v5ulXci6VdnT2gmJ+XZLFWew9I249B8Nw0AEFHj8+9BxAFCDuEVV40Wb34LgygPtVjjT4+ewfozpNg05Cw/1L0qOZQ7ZQawQjHtOqgH3QePb8aC+j6",
-   "blob": "U1NWNAEcnVFS0yQxLolp090mBInMAAAAB5yxszerNPG20mWD04PrGh+pTEeu/w8/4NPaYa2zPUX98B0+ViVUbj9bt+hV5SfZa3ZIkJ/Cr4pkvLz/k1dHXYRPS77LUPzXGHEX0SCDY/PWOfdSfqOGNvg/Q9bzT1T6Khfy4UnUgcw3/kaeO8tf6etP8Mm+MmBI7gCPDAy2cxhxIy56yNXMVtKRs3ceWSMnKPYjiLzZ2nSDZp0w5xh9fztWgRqKSDeF0dN7D5/DJJmymAZ1JQ==",
+   "wrapped": "ArBdfET+WwBf9eCKeUBEpGh6fRbEZBxpBSuSGpv9+WUtxH7eDXI16UJDnUlnKAiM2/xprTZGRyJqwlL3YnHdzaDY85WbdCJqP652MfqkG4yhaG3/gsUMuDqGqrg3",
+   "blob": "U1NWNAEcnVFS0yQxLolp090mBInMAAAABzsAT9yWBMotzBbTvv59AZ8yPeSpRltm0ZIrkZK3V+2Wx1mTA0WNNCSikzNnUkIpJ6ieMcllb/dUxS7wo/AzO7ZzGQ2xu3bflVHsc592QX2nVt6o0NCPnlNeLf1MUqJMlIb41hYJDN2NvgGScWFYl/IeQvxp2evpaeeqH6O0kP7NqumXjWy0bg72M+ZLm45T5tSN7cgnTziqpuPaRuNnUyUgL+U7h1WHSYfM/Riyq5aIbmpiuA==",
    "key_generation": 7,
    "data": {
     "accounts": [
@@ -280,15 +280,15 @@
     }
    },
    "name": "Wörk ✓",
-   "sealed_name": "QsaiVFcumzyl/xAn6ZTC4/oMHaRmABAc2nYGa4EGeU3E5dis5A=="
+   "sealed_name": "1w49rKNE+sgSpeAnZQ9H09x5dHMX0I6ZwBQiB+XjFjsCUOdR4w=="
   },
   {
    "format": 1,
    "vault_id": "HJ1RUtMkMS6JadPdJgSJzA==",
    "vault_key": "6l4tH7PIwwNjDM9h3/ZuvVF0XutjwNljVjMC9RSN14U=",
    "member": "alex",
-   "wrapped": "ARs+1SIBLyztM6Kvt4ouOscf2ks+MX/eht9EEynntIZvoHk8QH8XxJ755A2BOpGvMu3KFM2SmVzsgROxqmt6cZiITbvqJ+MPpK4iLKIiu9LpAXkrlhrHphvH9Jqn",
-   "blob": "UE1WMwEcnVFS0yQxLolp090mBInMAAAAB8DecJDixBPbFcJG4DmiOc/+0zuWGHnq+LNH5jQss9+IDb8zCJZM0DTMKiXfwNAJhSsQpVJyyCHX7n2MoyUJv9XJC4AfmCPycdprvSv6IyEAPAz+DfbjuIMCeWX2ML6H+5i/TjlxlMYt4JvoVBUprv9NTfCKEhrSLl1A01JRchHOguAT8B2bip3LHEPpKo7dauxydqMcEaBophmKvudK2+JIydbK19Y5Q7GMqtq6XzEHiyt0Vw==",
+   "wrapped": "Acu+EQ8cL4abudQ4FnSBQHlLheISeST2tYk24NN/w8hppUUJO2B6s/UefxCyN9tjp49OFVzPfUP2IoNd09oRCtOlnjaC6tSmkgrI4XuUE+jU5MAPEhMV6mteAlEO",
+   "blob": "UE1WMwEcnVFS0yQxLolp090mBInMAAAAB5pClsVjrlsddOdrvGnWCCARPa6ZckvOrshCtKDStT602Nxo9tMgrqdMdEf91inKKGgWU4fYEuXbNBHGMcXHhxP0fLF/E7yw3R+uUok1imNxU0B3ga2TCQ+FffS7b80ZZmHDQa/F1eNSE0clZ/Ot7X6VK4cQ9jc2Oa+hYhEB3SRjSQUwkNIGLSoPk11TtNf8ccgZg1M0H/wWwuPo8L2HcPL+UBDvPs/5u6TymRG+4gSd8Fol8w==",
    "key_generation": 7,
    "data": {
     "accounts": [
@@ -305,7 +305,7 @@
     }
    },
    "name": "Wörk ✓",
-   "sealed_name": "9nup/jfTUqs2CEoAbjIuUs51X3eFRRToHo0QVYrUfnpwIm5bFQ=="
+   "sealed_name": "YjCwMiOzF7l2HXXt4w3mVXslVZPVXelSf7W4+kqs9M5YloPHPw=="
   }
  ],
  "completed_keyset": {
@@ -325,55 +325,55 @@
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 0,
    "member": "alex",
-   "wrapped": "Ag6nxbQkT/v5ulXci6VdnT2gmJ+XZLFWew9I249B8Nw0AEFHj8+9BxAFCDuEVV40Wb34LgygPtVjjT4+ewfozpNg05Cw/1L0qOZQ7ZQawQjHtOqgH3QePb8aC+j6",
+   "wrapped": "ArBdfET+WwBf9eCKeUBEpGh6fRbEZBxpBSuSGpv9+WUtxH7eDXI16UJDnUlnKAiM2/xprTZGRyJqwlL3YnHdzaDY85WbdCJqP652MfqkG4yhaG3/gsUMuDqGqrg3",
    "signer": "alex",
-   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDAsImFsZXgiLCIyYzNkZThmYTViZGVmY2JlZmVjZjBlNGY3Mzk5ZTA1ZjRhNTRkODUyYTYwNDEyYTlkNzM5ZjlhNzA0MDI4MjIyIiwiYWxleCJd",
-   "signature": "I9a5isY7ez14OJsoUvTWWeYcENHkQvK9IpLQC8rzA2i4J2ay4hU0/7qqUpe0W5dRHHkBXNlTxkrj5H6RJYoSDg=="
+   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDAsImFsZXgiLCIxOTk5NTkxZGM1NzA0ZDRlY2ZlMmNiZTczYzhmMjhlNmM5NmY2NGZiMTFlYTZhNjVhYTMyNzU5OGFlYjY4MTlhIiwiYWxleCJd",
+   "signature": "9RJsZESvTkjp+Cm5bgXxvmc9yZOhc/4+T7g+AfQy3aWyD37iOX96W7tYgtjHy9jw2FPI73A4gAai7h1eMxVpBA=="
   },
   {
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 7,
    "member": "maria",
-   "wrapped": "Ag6nxbQkT/v5ulXci6VdnT2gmJ+XZLFWew9I249B8Nw0AEFHj8+9BxAFCDuEVV40Wb34LgygPtVjjT4+ewfozpNg05Cw/1L0qOZQ7ZQawQjHtOqgH3QePb8aC+j6",
+   "wrapped": "ArBdfET+WwBf9eCKeUBEpGh6fRbEZBxpBSuSGpv9+WUtxH7eDXI16UJDnUlnKAiM2/xprTZGRyJqwlL3YnHdzaDY85WbdCJqP652MfqkG4yhaG3/gsUMuDqGqrg3",
    "signer": "alex",
-   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDcsIm1hcmlhIiwiMmMzZGU4ZmE1YmRlZmNiZWZlY2YwZTRmNzM5OWUwNWY0YTU0ZDg1MmE2MDQxMmE5ZDczOWY5YTcwNDAyODIyMiIsImFsZXgiXQ==",
-   "signature": "NduB6ij+jfzAdvB4wgJPlLixwKPzjYeb4nEJjrZH2/YqwAHf0w44OsjJsClEpMssdwbVJoxhEALTcQwyItlDBw=="
+   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDcsIm1hcmlhIiwiMTk5OTU5MWRjNTcwNGQ0ZWNmZTJjYmU3M2M4ZjI4ZTZjOTZmNjRmYjExZWE2YTY1YWEzMjc1OThhZWI2ODE5YSIsImFsZXgiXQ==",
+   "signature": "iZ0xiVrhRM8VJqqy1dH2RRRXbHFVwbVydnfRvf3I1UFMUpoCwlZXMP6RyY5oFlKIQCJKR/kgXgpPECgQZ7NLAg=="
   },
   {
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 4294967295,
    "member": "bob.smith-2",
-   "wrapped": "Ag6nxbQkT/v5ulXci6VdnT2gmJ+XZLFWew9I249B8Nw0AEFHj8+9BxAFCDuEVV40Wb34LgygPtVjjT4+ewfozpNg05Cw/1L0qOZQ7ZQawQjHtOqgH3QePb8aC+j6",
+   "wrapped": "ArBdfET+WwBf9eCKeUBEpGh6fRbEZBxpBSuSGpv9+WUtxH7eDXI16UJDnUlnKAiM2/xprTZGRyJqwlL3YnHdzaDY85WbdCJqP652MfqkG4yhaG3/gsUMuDqGqrg3",
    "signer": "Ann Lee",
-   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDQyOTQ5NjcyOTUsImJvYi5zbWl0aC0yIiwiMmMzZGU4ZmE1YmRlZmNiZWZlY2YwZTRmNzM5OWUwNWY0YTU0ZDg1MmE2MDQxMmE5ZDczOWY5YTcwNDAyODIyMiIsIkFubiBMZWUiXQ==",
-   "signature": "Fbna0UZJkYFGWdKLlgVY5/jq5ugQkpW3oom626RQCyPwNK/VFainwOUWTw5Xyd8EtKQVELqNksTG2IqpzYCrAw=="
+   "message": "WyJTZWNyZXRTcGFjZTQgdmF1bHQga2V5IiwiMWM5ZDUxNTJkMzI0MzEyZTg5NjlkM2RkMjYwNDg5Y2MiLDQyOTQ5NjcyOTUsImJvYi5zbWl0aC0yIiwiMTk5OTU5MWRjNTcwNGQ0ZWNmZTJjYmU3M2M4ZjI4ZTZjOTZmNjRmYjExZWE2YTY1YWEzMjc1OThhZWI2ODE5YSIsIkFubiBMZWUiXQ==",
+   "signature": "x37U2hv+EdvLSUvadzmbALSk0Oiwk/nKTogESZybgjc5SVORxwm6ERjIEYgifoRTh7irIDt6XbB8Q8rqQMuSAw=="
   },
   {
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 0,
    "member": "alex",
-   "wrapped": "ARs+1SIBLyztM6Kvt4ouOscf2ks+MX/eht9EEynntIZvoHk8QH8XxJ755A2BOpGvMu3KFM2SmVzsgROxqmt6cZiITbvqJ+MPpK4iLKIiu9LpAXkrlhrHphvH9Jqn",
+   "wrapped": "Acu+EQ8cL4abudQ4FnSBQHlLheISeST2tYk24NN/w8hppUUJO2B6s/UefxCyN9tjp49OFVzPfUP2IoNd09oRCtOlnjaC6tSmkgrI4XuUE+jU5MAPEhMV6mteAlEO",
    "signer": "alex",
-   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsMCwiYWxleCIsIjk2MmJjZjFhZTE1MTdiN2RmZDc5MjdjMmEwYTg3NDA4M2I3NDJmMWQ4OWJiN2IzMzdhMGI1YjY2MTY0ZmQ0MDciLCJhbGV4Il0=",
-   "signature": "XUODKhSI2SSNydoiF05w+qBRuVEXuxH6Eus2JTvKVoAsdGyBYh+XKwLJi2m/Tpb5ZJCmkMVM6I8d2tVPX8ycAA=="
+   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsMCwiYWxleCIsIjJiMDBjMGQ3MmYyMGU5OTQ5MGY4YTQ4MGNhNTliZDJkZGNlZDgzZjY0ZTI0YTMwMGEyODQ4NDJmM2FiYWI3ZjYiLCJhbGV4Il0=",
+   "signature": "39V2SUE3Oixu+AZcwlciX6LZiErnz+3d2RSKTJo5u0kztis0hcZp4qQHckQOyBfg9E1A2XtFFMUCxAHe++ETAA=="
   },
   {
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 7,
    "member": "maria",
-   "wrapped": "ARs+1SIBLyztM6Kvt4ouOscf2ks+MX/eht9EEynntIZvoHk8QH8XxJ755A2BOpGvMu3KFM2SmVzsgROxqmt6cZiITbvqJ+MPpK4iLKIiu9LpAXkrlhrHphvH9Jqn",
+   "wrapped": "Acu+EQ8cL4abudQ4FnSBQHlLheISeST2tYk24NN/w8hppUUJO2B6s/UefxCyN9tjp49OFVzPfUP2IoNd09oRCtOlnjaC6tSmkgrI4XuUE+jU5MAPEhMV6mteAlEO",
    "signer": "alex",
-   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsNywibWFyaWEiLCI5NjJiY2YxYWUxNTE3YjdkZmQ3OTI3YzJhMGE4NzQwODNiNzQyZjFkODliYjdiMzM3YTBiNWI2NjE2NGZkNDA3IiwiYWxleCJd",
-   "signature": "y30waRtLCCCQH70+0wkqK6SnZHhzbAVuWFxHEcAyx/DIgrD3w9ecduP1/ib7CB5nDRoNUI7M+kk0geCMru+KDg=="
+   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsNywibWFyaWEiLCIyYjAwYzBkNzJmMjBlOTk0OTBmOGE0ODBjYTU5YmQyZGRjZWQ4M2Y2NGUyNGEzMDBhMjg0ODQyZjNhYmFiN2Y2IiwiYWxleCJd",
+   "signature": "t8YKE1mY5ubLFxcX46/xHM1sxGYo6KI/6IzSkVNAJTK3ueEQv6Wc7+OJehwhz3efRdjrMc+24voXX2qwxvlqDA=="
   },
   {
    "vault_hex": "1c9d5152d324312e8969d3dd260489cc",
    "generation": 4294967295,
    "member": "bob.smith-2",
-   "wrapped": "ARs+1SIBLyztM6Kvt4ouOscf2ks+MX/eht9EEynntIZvoHk8QH8XxJ755A2BOpGvMu3KFM2SmVzsgROxqmt6cZiITbvqJ+MPpK4iLKIiu9LpAXkrlhrHphvH9Jqn",
+   "wrapped": "Acu+EQ8cL4abudQ4FnSBQHlLheISeST2tYk24NN/w8hppUUJO2B6s/UefxCyN9tjp49OFVzPfUP2IoNd09oRCtOlnjaC6tSmkgrI4XuUE+jU5MAPEhMV6mteAlEO",
    "signer": "Ann Lee",
-   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsNDI5NDk2NzI5NSwiYm9iLnNtaXRoLTIiLCI5NjJiY2YxYWUxNTE3YjdkZmQ3OTI3YzJhMGE4NzQwODNiNzQyZjFkODliYjdiMzM3YTBiNWI2NjE2NGZkNDA3IiwiQW5uIExlZSJd",
-   "signature": "SHcXFVgRt48CgS3BvPFEWTNrUTL55RmGk3qK5FQeN+1z8orf8jBhLXvIvqHQDswzJP/9ME0xqSvqYm9UlKiPBw=="
+   "message": "WyJQYXNzTWFuMyB2YXVsdCBrZXkiLCIxYzlkNTE1MmQzMjQzMTJlODk2OWQzZGQyNjA0ODljYyIsNDI5NDk2NzI5NSwiYm9iLnNtaXRoLTIiLCIyYjAwYzBkNzJmMjBlOTk0OTBmOGE0ODBjYTU5YmQyZGRjZWQ4M2Y2NGUyNGEzMDBhMjg0ODQyZjNhYmFiN2Y2IiwiQW5uIExlZSJd",
+   "signature": "Ua78X8ho2cgl5kF0qZwSpZkZXOzYsEYRONh/2LfAqJsN4M4FtJsiynFflT8gROisfadedfd/QT5S1d6auQZ5Cg=="
   }
  ],
  "secret_store": [
@@ -384,12 +384,12 @@
    "record": {
     "scheme": "password",
     "v": 2,
-    "salt": "vUaXn2/Nn8hOvfIcz6+Hxw==",
-    "nonce": "ZSPwDizbLtsuMLQm",
+    "salt": "UPO4I3xqT8P+TexiheeGyA==",
+    "nonce": "soNh/UglhKig5Coe",
     "passes": 1,
     "memory_kib": 64,
     "lanes": 1,
-    "sealed": "8+jez1R5mKqoJ/od8YB5U9+4wNf11kLh/0U4Onk30KY="
+    "sealed": "iubrjWhQEGSVK4vzbznS5LD9xPEgOJRR8yKYWPd9RuM="
    }
   },
   {
@@ -399,13 +399,426 @@
    "record": {
     "scheme": "password",
     "v": 2,
-    "salt": "HplkW2LCZ3D86GUR3TtKug==",
-    "nonce": "8ylqFNPwvXfj5hQU",
+    "salt": "Sv9oYmamQ9kc/iusHg/Z2Q==",
+    "nonce": "hPVxoEVqO/a4shs2",
     "passes": 1,
     "memory_kib": 64,
     "lanes": 1,
-    "sealed": "v99C+ktCDo25yKPMJhDFGE+IOIWtxxiSlECE1uO86nc="
+    "sealed": "UiiAG7j2/NDcMXtssNyg6uHj5Atvv42dsC5EaW8LGeU="
    }
   }
+ ],
+ "totp": [
+  {
+   "stored": "JBSWY3DPEHPK3PXP",
+   "digits": 6,
+   "period": 30,
+   "algorithm": "SHA1",
+   "key": "SGVsbG8h3q2+7w==",
+   "codes": [
+    [
+     0,
+     "282760",
+     30
+    ],
+    [
+     59,
+     "996554",
+     1
+    ],
+    [
+     1111111109.5,
+     "071271",
+     1
+    ],
+    [
+     1234567890,
+     "742275",
+     30
+    ],
+    [
+     2000000000,
+     "890699",
+     10
+    ],
+    [
+     20000000000,
+     "752434",
+     10
+    ]
+   ]
+  },
+  {
+   "stored": "jbsw y3dp-ehpk 3pxp====",
+   "digits": 6,
+   "period": 30,
+   "algorithm": "SHA1",
+   "key": "SGVsbG8h3q2+7w==",
+   "codes": [
+    [
+     0,
+     "282760",
+     30
+    ],
+    [
+     59,
+     "996554",
+     1
+    ],
+    [
+     1111111109.5,
+     "071271",
+     1
+    ],
+    [
+     1234567890,
+     "742275",
+     30
+    ],
+    [
+     2000000000,
+     "890699",
+     10
+    ],
+    [
+     20000000000,
+     "752434",
+     10
+    ]
+   ]
+  },
+  {
+   "stored": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+   "digits": 6,
+   "period": 30,
+   "algorithm": "SHA1",
+   "key": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",
+   "codes": [
+    [
+     0,
+     "755224",
+     30
+    ],
+    [
+     59,
+     "287082",
+     1
+    ],
+    [
+     1111111109.5,
+     "081804",
+     1
+    ],
+    [
+     1234567890,
+     "005924",
+     30
+    ],
+    [
+     2000000000,
+     "279037",
+     10
+    ],
+    [
+     20000000000,
+     "353130",
+     10
+    ]
+   ]
+  },
+  {
+   "stored": "otpauth://totp/Bank:me?secret=JBSWY3DPEHPK3PXP&issuer=Bank",
+   "digits": 6,
+   "period": 30,
+   "algorithm": "SHA1",
+   "key": "SGVsbG8h3q2+7w==",
+   "codes": [
+    [
+     0,
+     "282760",
+     30
+    ],
+    [
+     59,
+     "996554",
+     1
+    ],
+    [
+     1111111109.5,
+     "071271",
+     1
+    ],
+    [
+     1234567890,
+     "742275",
+     30
+    ],
+    [
+     2000000000,
+     "890699",
+     10
+    ],
+    [
+     20000000000,
+     "752434",
+     10
+    ]
+   ]
+  },
+  {
+   "stored": "otpauth://TOTP/x?SECRET=jbswy3dpehpk3pxp&digits=8&period=60&algorithm=sha-256",
+   "digits": 8,
+   "period": 60,
+   "algorithm": "SHA256",
+   "key": "SGVsbG8h3q2+7w==",
+   "codes": [
+    [
+     0,
+     "96023015",
+     60
+    ],
+    [
+     59,
+     "96023015",
+     1
+    ],
+    [
+     1111111109.5,
+     "83444909",
+     31
+    ],
+    [
+     1234567890,
+     "45806924",
+     30
+    ],
+    [
+     2000000000,
+     "47926964",
+     40
+    ],
+    [
+     20000000000,
+     "24999434",
+     40
+    ]
+   ]
+  },
+  {
+   "stored": "otpauth://totp/x?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&algorithm=SHA512&digits=7",
+   "digits": 7,
+   "period": 30,
+   "algorithm": "SHA512",
+   "key": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",
+   "codes": [
+    [
+     0,
+     "4125165",
+     30
+    ],
+    [
+     59,
+     "9342147",
+     1
+    ],
+    [
+     1111111109.5,
+     "3049338",
+     1
+    ],
+    [
+     1234567890,
+     "6671578",
+     30
+    ],
+    [
+     2000000000,
+     "6464532",
+     10
+    ],
+    [
+     20000000000,
+     "9481994",
+     10
+    ]
+   ]
+  },
+  {
+   "stored": "otpauth://totp/x?secret=JBSW%20Y3DP+EHPK3PXP&digits=&period=15",
+   "digits": 6,
+   "period": 15,
+   "algorithm": "SHA1",
+   "key": "SGVsbG8h3q2+7w==",
+   "codes": [
+    [
+     0,
+     "282760",
+     15
+    ],
+    [
+     59,
+     "143627",
+     1
+    ],
+    [
+     1111111109.5,
+     "889405",
+     1
+    ],
+    [
+     1234567890,
+     "434379",
+     15
+    ],
+    [
+     2000000000,
+     "476962",
+     10
+    ],
+    [
+     20000000000,
+     "941843",
+     10
+    ]
+   ]
+  }
+ ],
+ "totp_errors": [
+  {
+   "stored": "JBSW1Y3DP8EHPK3PXP",
+   "error": "A 2FA secret uses only the letters A-Z and the digits 2-7; this one also has '1' '8'."
+  },
+  {
+   "stored": "JBSWY3DPEHPK3PX",
+   "error": "That 2FA secret is too short to be a real one (fewer than 16 characters)."
+  },
+  {
+   "stored": "JBSWY3DP",
+   "error": "That 2FA secret is too short to be a real one (fewer than 16 characters)."
+  },
+  {
+   "stored": "otpauth://hotp/x?secret=JBSWY3DPEHPK3PXP",
+   "error": "Only time-based codes (otpauth://totp/...) are supported, not otpauth://hotp."
+  },
+  {
+   "stored": "otpauth://totp/x?issuer=a",
+   "error": "That otpauth:// link has no secret in it."
+  },
+  {
+   "stored": "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&algorithm=MD5",
+   "error": "The algorithm MD5 is not supported (SHA1, SHA256 or SHA512)."
+  },
+  {
+   "stored": "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=x",
+   "error": "The digits or period in that otpauth:// link is not a number."
+  },
+  {
+   "stored": "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&digits=9",
+   "error": "Codes must have 6 to 8 digits."
+  },
+  {
+   "stored": "otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&period=0",
+   "error": "The code period must be 1 to 300 seconds."
+  },
+  {
+   "stored": "   ",
+   "error": ""
+  },
+  {
+   "stored": "äöü!",
+   "error": "A 2FA secret uses only the letters A-Z and the digits 2-7; this one also has '!' 'Ä' 'Ö' 'Ü'."
+  }
+ ],
+ "spaced": {
+  "123456": "123 456",
+  "1234567": "1234 567",
+  "12345678": "1234 5678"
+ },
+ "strength": [
+  [
+   "",
+   "",
+   0.0
+  ],
+  [
+   "a",
+   "Weak",
+   0.039170330984509096
+  ],
+  [
+   "password",
+   "Weak",
+   0.16666666666666666
+  ],
+  [
+   "P@ssw0rd123!",
+   "Weak",
+   0.16666666666666666
+  ],
+  [
+   "aaaaaaaaaaaaaaaaaaaa",
+   "Weak",
+   0.20846168495249592
+  ],
+  [
+   "abcdefgh",
+   "Weak",
+   0.10771841020740001
+  ],
+  [
+   "qwertyuiopqwertyuiop",
+   "Weak",
+   0.16666666666666666
+  ],
+  [
+   "correct horse battery staple",
+   "Strong",
+   1.0
+  ],
+  [
+   "Tr0ub4dor&3",
+   "Good",
+   0.5950865338302201
+  ],
+  [
+   "x7$Kp!2qLm#9vR@w",
+   "Strong",
+   0.8655804128439566
+  ],
+  [
+   "ünïcödé-pässwörd-✓",
+   "Strong",
+   0.9184203378595082
+  ],
+  [
+   "123456789",
+   "Weak",
+   0.08304820237218406
+  ],
+  [
+   "zxcvbnm",
+   "Weak",
+   0.16666666666666666
+  ],
+  [
+   "Summer2026!",
+   "Fair",
+   0.549102574397885
+  ],
+  [
+   "aB3$aB3$aB3$aB3$",
+   "Weak",
+   0.32459265481648375
+  ],
+  [
+   "tEmP",
+   "Weak",
+   0.16666666666666666
+  ],
+  [
+   "kq8Zr2Wx9Lp4Nv7T",
+   "Good",
+   0.7938928413849167
+  ]
  ]
 }
