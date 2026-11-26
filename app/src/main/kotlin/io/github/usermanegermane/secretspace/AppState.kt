@@ -13,10 +13,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import secretspace.core.AccountServer
 import secretspace.core.AccountStore
 import secretspace.core.AccountSync
 import secretspace.core.Merge
 import secretspace.core.NeedsConversion
+import secretspace.core.NewAccount
 import secretspace.core.OpenAccount
 import secretspace.core.PasswordSecretStore
 import secretspace.core.SecretKeyNeeded
@@ -25,6 +27,10 @@ import java.io.File
 /** Where the app is. */
 sealed interface Screen {
     data object SignIn : Screen
+    data object Create : Screen
+    data object CreateKit : Screen
+    data object CreateWords : Screen
+    data object CreateCheck : Screen
     data class Unlock(val username: String) : Screen
     data object Vault : Screen
     data class Entry(val vaultId: String, val entryId: String) : Screen
@@ -33,6 +39,9 @@ sealed interface Screen {
     data class Archive(val vaultId: String) : Screen
     data object Settings : Screen
 }
+
+/** A new account on its way: made in memory, not on the server or this phone yet. */
+class Creating(val url: String, val caFile: String, var code: String, val made: NewAccount)
 
 /** A sync stopped on a vault with conflicts, waiting for the user's choices. */
 class Question(val vaultName: String, val result: Merge.Result, val answer: CompletableDeferred<Map<String, String>?>)
@@ -55,6 +64,8 @@ class AppState(private val context: Context) {
         private set
     var message by mutableStateOf<String?>(null)
     var question by mutableStateOf<Question?>(null)
+        private set
+    var creating by mutableStateOf<Creating?>(null)
         private set
     var version by mutableIntStateOf(0)
         private set
@@ -101,13 +112,64 @@ class AppState(private val context: Context) {
             val signed = withContext(Dispatchers.Default) {
                 AccountSync.signIn(store, url.trim(), ca, username.trim(), password, kit.ifBlank { null })
             }
-            opened(OpenAccount(signed.account))
+            opened(OpenAccount(signed.account), password)
         } catch (e: SecretKeyNeeded) {
             onNeedsKit()
             throw e
         } catch (e: NeedsConversion) {
             throw e
         }
+    }
+
+    // ------------------------------------------------------------------ a new account
+    /** Step 1: the server answers and the keys are made; nothing is written yet. */
+    fun startCreate(url: String, certificate: Uri?, code: String, username: String, password: String) =
+        run("Making the account's keys…") {
+            val address = url.trim()
+            val ca = withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: "" }
+            val made = withContext(Dispatchers.Default) {
+                AccountServer(address, ca).checkApi()         // a wrong address or certificate shows now
+                NewAccount.prepare(store, username.trim(), password)
+            }
+            creating = Creating(address, ca, code, made)
+            screen = Screen.CreateKit
+        }
+
+    fun saveKit(uri: Uri) {
+        val c = creating ?: return
+        run("Saving the Emergency Kit…") {
+            withContext(Dispatchers.IO) {
+                context.contentResolver.openOutputStream(uri, "wt").use { out ->
+                    requireNotNull(out) { "That file cannot be written." }
+                    out.write(c.made.emergencyKitText(c.url).toByteArray(Charsets.UTF_8))
+                }
+            }
+            say("Emergency Kit saved — print it or keep it offline")
+        }
+    }
+
+    /** The last step: on the server, then on this phone, then open, with a first Sync. */
+    fun finishCreate(code: String) {
+        val c = creating ?: return
+        c.code = code
+        run("Creating the account…") {
+            val account = withContext(Dispatchers.Default) { c.made.createOn(store, c.url, c.caFile, code) }
+            creating = null
+            val open = OpenAccount(account)
+            opened(open, null)
+            try {
+                withContext(Dispatchers.IO) { open.sync { _, _ -> null } }
+                say("Account “${account.username}” created and on the server")
+            } catch (e: Exception) {
+                say("Account “${account.username}” created. Sync did not run yet: ${e.message}")
+            }
+        }
+    }
+
+    fun cancelCreate() {
+        creating = null
+        val accounts = store.listAccounts()
+        screen = if (accounts.isEmpty()) Screen.SignIn else Screen.Unlock(accounts.first())
     }
 
     /** The server's certificate, copied into the app's own files (the account keeps its path). */
@@ -125,14 +187,26 @@ class AppState(private val context: Context) {
     fun unlock(username: String, password: String, kit: String?, onNeedsKit: () -> Unit) = run("Unlocking…") {
         try {
             val account = withContext(Dispatchers.Default) { store.unlock(username, password, kit) }
-            opened(OpenAccount(account))
+            opened(OpenAccount(account), password)
         } catch (e: SecretKeyNeeded) {
             onNeedsKit()
             throw e
         }
     }
 
-    private suspend fun opened(account: OpenAccount) {
+    /** The fingerprint gave the password back; a wrong one (changed on another device) is forgotten. */
+    fun unlockWithFingerprint(username: String, password: String) = run("Unlocking…") {
+        val account = try {
+            withContext(Dispatchers.Default) { store.unlock(username, password) }
+        } catch (e: Exception) {
+            Biometric.forget(username)
+            throw IllegalStateException("The master password was changed. Enter the new one.")
+        }
+        opened(OpenAccount(account), password)
+    }
+
+    private suspend fun opened(account: OpenAccount, password: String?) {
+        if (password != null) Biometric.remember(context, account.account.username, password)
         val unreadable = withContext(Dispatchers.IO) {
             val bad = account.load()
             account.autoPurge()
@@ -162,8 +236,14 @@ class AppState(private val context: Context) {
     }
 
     fun cameBack() {
-        if (!away && open != null && leftAt != 0L && System.currentTimeMillis() - leftAt > LOCK_AFTER_MS) lock()
+        val gone = if (leftAt == 0L) 0L else System.currentTimeMillis() - leftAt
+        if (!away && open != null && gone > LOCK_AFTER_MS) lock()
+        // A new account half made keeps longer (the words are being written down), but not for ever.
+        if (!away && creating != null && gone > DROP_NEW_ACCOUNT_MS) cancelCreate()
         leftAt = 0L
+        // Back in front: whatever picker or prompt was open is closed now, so the next leaving counts.
+        away = false
+        changed()               // what other apps changed meanwhile (the autofill choice) is shown again
     }
 
     // ------------------------------------------------------------------ changing
@@ -201,5 +281,6 @@ class AppState(private val context: Context) {
 
     companion object {
         const val LOCK_AFTER_MS = 60_000L
+        const val DROP_NEW_ACCOUNT_MS = 10 * 60_000L
     }
 }

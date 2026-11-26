@@ -1,6 +1,11 @@
 package io.github.usermanegermane.secretspace.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import android.view.autofill.AutofillManager
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +23,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,8 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.ui.unit.dp
 import io.github.usermanegermane.secretspace.AppState
+import io.github.usermanegermane.secretspace.Biometric
 import io.github.usermanegermane.secretspace.Question
 import io.github.usermanegermane.secretspace.Screen
 import secretspace.core.AppVersion
@@ -86,6 +96,7 @@ fun SettingsScreen(state: AppState) {
     val vaultId = state.vaultId ?: account.personalId
     var removing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
     Column(Modifier.fillMaxSize()) {
         Bar("Settings", { state.screen = Screen.Vault })
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -95,6 +106,7 @@ fun SettingsScreen(state: AppState) {
             Text("Read it out to someone who shares a vault with you, so they can check it is you.",
                 style = MaterialTheme.typography.bodySmall)
             Text("Server: " + (account.server?.text("url") ?: "none"), Modifier.padding(top = 8.dp))
+            SecuritySettings(state)
             if (open.account.canWrite(vaultId)) {
                 Text("Archive of “${account.vaultFile(vaultId).name}”", Modifier.padding(top = 16.dp),
                     style = MaterialTheme.typography.titleSmall)
@@ -125,6 +137,7 @@ fun SettingsScreen(state: AppState) {
             if (!account.checkPassword(password)) return@TextButton state.say("That is not the master password.")
             removing = false
             val name = account.username
+            Biometric.turnOff(context, name)
             state.lock()
             state.store.deleteAccount(name)
             val left = state.store.listAccounts()
@@ -190,4 +203,83 @@ private fun side(label: String, entry: Obj?) {
             Py.text(entry, "updated_by").takeIf { it.isNotEmpty() }?.let { "by $it" },
             if (Py.text(entry, "archived_at").isNotEmpty()) "archived" else null).joinToString(" · "),
         style = MaterialTheme.typography.bodySmall)
+}
+
+/** Settings -> Security: unlock with fingerprint (as Windows Hello on the PC), and autofill. */
+@Composable
+private fun SecuritySettings(state: AppState) {
+    val open = state.open ?: return
+    val username = open.account.username
+    val activity = LocalContext.current as FragmentActivity
+    @Suppress("UNUSED_VARIABLE") val redraw = state.version
+    var on by remember(username) { mutableStateOf(Biometric.isOn(activity, username)) }
+    var asking by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
+    val why = Biometric.whyNot(activity)
+    Text("Security", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
+    // The whole row is the switch: tapped anywhere, and read out with its label.
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.toggleable(
+        value = on, enabled = on || why == null, role = Role.Switch, onValueChange = { want ->
+            if (!want) {
+                Biometric.turnOff(activity, username)
+                on = false
+            } else {
+                password = ""
+                asking = true
+            }
+        })) {
+        Column(Modifier.weight(1f)) {
+            Text("Unlock with fingerprint")
+            Text(why ?: ((if (Biometric.pinAllowed) "Your fingerprint, face or the phone's PIN opens this account " +
+                "again after a lock — so can anyone who knows the phone's PIN." else "Your fingerprint opens this " +
+                "account again after a lock.") + " The master password is still needed each time SecretSpace starts."),
+                style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(checked = on, enabled = on || why == null, onCheckedChange = null)
+    }
+    if (asking) AlertDialog(
+        onDismissRequest = { asking = false },
+        title = { Text("Unlock with fingerprint") },
+        text = { Column {
+            Text("Enter the master password of “$username” to turn it on.")
+            Field("Master password", password, { password = it }, secret = true)
+        } },
+        confirmButton = { TextButton(onClick = {
+            if (!open.account.checkPassword(password)) return@TextButton state.say("That is not the master password.")
+            asking = false
+            state.away = true
+            Biometric.turnOn(activity, username, password, {
+                state.away = false
+                on = true
+                state.say("Unlock with fingerprint is on")
+            }, { error ->
+                state.away = false
+                on = false
+                if (error != null) state.say(error)
+            })
+        }) { Text("Turn on") } },
+        dismissButton = { TextButton(onClick = { asking = false }) { Text("Cancel") } },
+    )
+
+    val autofill = activity.getSystemService(AutofillManager::class.java)
+    val ours = autofill?.hasEnabledAutofillServices() == true
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text("Autofill")
+            Text(when {
+                autofill == null || !autofill.isAutofillSupported -> "This phone does not offer autofill to apps."
+                ours -> "On: SecretSpace offers your logins in apps and browsers that support Android's autofill."
+                else -> "Let SecretSpace fill in logins in other apps and browsers: choose it as the autofill service."
+            }, style = MaterialTheme.typography.bodySmall)
+        }
+        if (autofill?.isAutofillSupported == true) OutlinedButton(onClick = {
+            // Android's own settings: that is leaving the app, so it locks if left there.
+            try {
+                activity.startActivity(Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE,
+                    Uri.parse("package:" + activity.packageName)))
+            } catch (e: Exception) {
+                state.say("Open Android's settings → Passwords & accounts → Autofill service, and choose SecretSpace.")
+            }
+        }) { Text(if (ours) "Change" else "Turn on") }
+    }
 }
