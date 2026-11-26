@@ -50,7 +50,7 @@ class AccountServer(url: String, private val caFile: String = "", private val ti
         const val MIN_SERVER = "2.1.0"
         const val CLIENT_HEADER = "X-SecretSpace-Client"
 
-        fun quote(name: String): String = URLEncoder.encode(name, Charsets.UTF_8).replace("+", "%20")
+        fun quote(name: String): String = URLEncoder.encode(name, "UTF-8").replace("+", "%20")
     }
 
     val url: String = url.trimEnd('/')

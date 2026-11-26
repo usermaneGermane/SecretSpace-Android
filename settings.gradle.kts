@@ -1,9 +1,9 @@
 rootProject.name = "SecretSpace-Android"
-include(":core")
+include(":core", ":app")
 
 dependencyResolutionManagement {
-    repositories { mavenCentral() }
+    repositories { google(); mavenCentral() }
 }
 pluginManagement {
-    repositories { gradlePluginPortal(); mavenCentral() }
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
 }

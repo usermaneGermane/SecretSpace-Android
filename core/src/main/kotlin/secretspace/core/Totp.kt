@@ -81,12 +81,12 @@ object Totp {
         for (part in queryText.split('&', ';')) {
             if (!part.contains('=')) continue
             val (k, v) = part.split('=', limit = 2)
-            val value = URLDecoder.decode(v, Charsets.UTF_8)
+            val value = URLDecoder.decode(v, "UTF-8")
             if (value.isEmpty()) continue                 // parse_qs drops blank values
-            query[URLDecoder.decode(k, Charsets.UTF_8).lowercase()] = value
+            query[URLDecoder.decode(k, "UTF-8").lowercase()] = value
         }
         val secret = query["secret"] ?: throw IllegalArgumentException("That otpauth:// link has no secret in it.")
-        val key = decodeSecret(URLDecoder.decode(secret.replace("+", "%2B"), Charsets.UTF_8))
+        val key = decodeSecret(URLDecoder.decode(secret.replace("+", "%2B"), "UTF-8"))
         val algorithm = (query["algorithm"] ?: "SHA1").uppercase().replace("-", "")
         if (algorithm !in ALGORITHMS) throw IllegalArgumentException(
             "The algorithm $algorithm is not supported (SHA1, SHA256 or SHA512).",
