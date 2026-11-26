@@ -131,7 +131,7 @@ object AccountCrypto {
         return out
     }
 
-    private fun checkCost(passes: Int, memoryKib: Int, lanes: Int) {
+    internal fun checkCost(passes: Int, memoryKib: Int, lanes: Int) {
         if (passes !in 1..ARGON2_MAX_PASSES || memoryKib < 8 * lanes ||
             memoryKib > ARGON2_MAX_MEMORY_KIB || lanes !in 1..ARGON2_MAX_LANES
         ) throw CryptoError(

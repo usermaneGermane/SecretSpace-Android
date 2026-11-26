@@ -167,6 +167,29 @@ for fmt in (ac.NOW, ac.OLD):
 old = {"x25519_private": b64(seeded(70)), "personal_vault_key": b64(seeded(71))}
 v["completed_keyset"] = {"in": old, "out": ac.complete_keyset(old)}
 
+# -- what a vault key's signature covers (account_sync.key_message) -------------
+import account_sync                                            # noqa: E402
+v["key_messages"] = []
+for n, fmt in enumerate((ac.NOW, ac.OLD)):
+    wrapped = v["vaults"][n]["wrapped"]
+    for member, signer, generation in [("alex", "alex", 0), ("maria", "alex", 7),
+                                       ("bob.smith-2", "Ann Lee", 4294967295)]:
+        message = account_sync.key_message(vault_id.hex(), generation, member,
+                                           wrapped, signer)
+        v["key_messages"].append({
+            "vault_hex": vault_id.hex(), "generation": generation, "member": member,
+            "wrapped": wrapped, "signer": signer, "message": b64(message),
+            "signature": ac.sign(owner, message)})
+
+# -- a Secret Key kept under the master password (secret_store) ----------------
+import secret_store                                            # noqa: E402
+ac.ARGON2_PASSES, ac.ARGON2_MEMORY_KIB, ac.ARGON2_LANES = 1, 64, 1
+v["secret_store"] = [{"username": user, "password": password, "secret": b64(seeded(80 + n)[:16]),
+                      "record": secret_store.protect(seeded(80 + n)[:16], user, password,
+                                                     secret_store.SCHEME_PASSWORD)}
+                     for n, (user, password) in enumerate([("alex", "lab-pass-1"),
+                                                          ("Mária", "ﬁancé Ω")])]
+
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w", encoding="utf-8", newline="\n") as f:
     json.dump(v, f, indent=1, ensure_ascii=False)
