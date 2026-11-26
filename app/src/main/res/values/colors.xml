@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window colour (ui/Palette.kt BG), shown before the first screen is drawn. -->
+    <color name="window">#EDF0F4</color>
+</resources>

@@ -26,6 +26,7 @@ import java.io.File
 
 /** Where the app is. */
 sealed interface Screen {
+    data object Welcome : Screen
     data object SignIn : Screen
     data object Create : Screen
     data object CreateKit : Screen
@@ -59,7 +60,7 @@ class AppState(private val context: Context) {
 
     var open by mutableStateOf<OpenAccount?>(null)
         private set
-    var screen by mutableStateOf<Screen>(Screen.SignIn)
+    var screen by mutableStateOf<Screen>(Screen.Welcome)
     var vaultId by mutableStateOf<String?>(null)
     var busy by mutableStateOf<String?>(null)
         private set
@@ -77,8 +78,13 @@ class AppState(private val context: Context) {
     var away = false
 
     init {
+        home()
+    }
+
+    /** The first screen: an account's unlock, or the welcome when this phone has none. */
+    fun home() {
         val accounts = store.listAccounts()
-        screen = if (accounts.isEmpty()) Screen.SignIn else Screen.Unlock(accounts.first())
+        screen = if (accounts.isEmpty()) Screen.Welcome else Screen.Unlock(accounts.first())
     }
 
     fun changed() {
@@ -181,8 +187,7 @@ class AppState(private val context: Context) {
 
     fun cancelCreate() {
         creating = null
-        val accounts = store.listAccounts()
-        screen = if (accounts.isEmpty()) Screen.SignIn else Screen.Unlock(accounts.first())
+        home()
     }
 
     /** The server's certificate, copied into the app's own files (the account keeps its path). */
@@ -240,7 +245,7 @@ class AppState(private val context: Context) {
         val name = open?.account?.username
         open = null
         vaultId = null
-        screen = if (name != null) Screen.Unlock(name) else Screen.SignIn
+        if (name != null) screen = Screen.Unlock(name) else home()
         Clipboard.clearNow(context)
     }
 

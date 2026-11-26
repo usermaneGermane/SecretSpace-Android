@@ -14,8 +14,10 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // No screenshots, and a blank card in the recent-apps list.
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // No screenshots, and a blank card in the recent-apps list. Only a debug build started by the lab
+        // with ``--ez lab_screenshots true`` may be photographed (to check the look); a release never.
+        val labShots = BuildConfig.DEBUG && intent.getBooleanExtra("lab_screenshots", false)
+        if (!labShots) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         setContent { SecretSpaceTheme { Root(state) } }
     }

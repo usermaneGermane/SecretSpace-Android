@@ -3,36 +3,24 @@ package io.github.usermanegermane.secretspace.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.material3.Button
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Spacer
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import android.view.autofill.AutofillManager
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.toggleable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -41,10 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.fragment.app.FragmentActivity
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import io.github.usermanegermane.secretspace.AppState
 import io.github.usermanegermane.secretspace.Biometric
 import io.github.usermanegermane.secretspace.Question
@@ -54,6 +43,7 @@ import secretspace.core.Disk.text
 import secretspace.core.Merge
 import secretspace.core.Obj
 import secretspace.core.Py
+import secretspace.core.Times
 
 @Composable
 fun ArchiveScreen(state: AppState, vaultId: String) {
@@ -62,35 +52,38 @@ fun ArchiveScreen(state: AppState, vaultId: String) {
     val canWrite = open.account.canWrite(vaultId)
     var doomed by remember { mutableStateOf<Obj?>(null) }
     val entries = open.entries(vaultId, archived = true)
-    Column(Modifier.fillMaxSize()) {
-        Bar("Archive", { state.screen = Screen.Vault })
-        if (entries.isEmpty()) Text("Nothing archived.", Modifier.padding(16.dp))
-        LazyColumn {
+    Page("Archive", { state.screen = Screen.Vault }) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Sp.l, end = Sp.l, bottom = Sp.xxl),
+            verticalArrangement = Arrangement.spacedBy(Sp.s)) {
+            item {
+                Muted(if (entries.isEmpty()) "Nothing archived." else "Archived entries of “${open.account.vaultFile(vaultId).name}”",
+                    Modifier.padding(vertical = Sp.xs))
+            }
             items(entries, key = { it["id"] as String }) { e ->
-                ListItem(
-                    headlineContent = { Text(Py.text(e, "site").ifEmpty { "(no name)" }) },
-                    supportingContent = { Text("Archived " + Py.text(e, "archived_at").take(10) +
-                        (if (Py.asObj(e["moved"]) != null) " · moved to another vault" else "")) },
-                    trailingContent = { if (canWrite) Row {
-                        TextButton(onClick = { state.change { it.restore(vaultId, e["id"] as String) } }) { Text("Restore") }
-                        TextButton(onClick = { doomed = e }) { Text("Delete") }
-                    } },
-                    modifier = Modifier.clickable { state.screen = Screen.Entry(vaultId, e["id"] as String) },
-                )
-                HorizontalDivider()
+                val id = e["id"] as String
+                Column(Modifier.fillMaxWidth()) {
+                    RowCard(Py.text(e, "site"), "Archived " + Times.long(Py.text(e, "archived_at")) +
+                        (if (Py.asObj(e["moved"]) != null) " · moved to another vault" else ""),
+                        { state.screen = Screen.Entry(vaultId, id) })
+                    if (canWrite) Row(Modifier.padding(top = Sp.xs, start = Sp.s), horizontalArrangement = Arrangement.spacedBy(Sp.s)) {
+                        QuietButton("Restore", { state.change { it.restore(vaultId, id) } })
+                        QuietButton("Delete for good", { doomed = e }, danger = true)
+                    }
+                }
             }
         }
     }
     doomed?.let { e ->
         AlertDialog(
-            onDismissRequest = { doomed = null },
-            title = { Text("Delete “${Py.text(e, "site")}” for good?") },
-            text = { Text("This cannot be undone, here or on your other devices after they sync.") },
-            confirmButton = { TextButton(onClick = {
+            onDismissRequest = { doomed = null }, containerColor = Look.c.card, shape = Radius.dialog,
+            title = { Text("Delete “${Py.text(e, "site")}” for good?", style = Type.heading) },
+            text = { Text("This cannot be undone, here or on your other devices after they sync.", style = Type.body,
+                color = Look.c.muted) },
+            confirmButton = { DangerButton("Delete for good", {
                 doomed = null
                 state.change { it.purge(vaultId, e["id"] as String) }
-            }) { Text("Delete for good") } },
-            dismissButton = { TextButton(onClick = { doomed = null }) { Text("Cancel") } },
+            }) },
+            dismissButton = { QuietButton("Cancel", { doomed = null }) },
         )
     }
 }
@@ -104,55 +97,64 @@ fun SettingsScreen(state: AppState) {
     var removing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
-    Column(Modifier.fillMaxSize()) {
-        Bar("Settings", { state.screen = Screen.Vault })
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Text("Account", style = MaterialTheme.typography.titleSmall)
-            Text(account.username)
-            Text("Fingerprint: ${account.fingerprint}", style = MaterialTheme.typography.bodySmall)
-            Text("Read it out to someone who shares a vault with you, so they can check it is you.",
-                style = MaterialTheme.typography.bodySmall)
+    Page("Settings", { state.screen = Screen.Vault }) {
+        Body {
+            Card {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(account.username, 48.dp)
+                    Spacer(Modifier.width(Sp.m))
+                    Column {
+                        Text(account.username, style = Type.leadBold, color = Look.c.text)
+                        Muted(if (account.server != null) "Synced with your server" else "On this phone only", style = Type.caption)
+                    }
+                }
+                Rule()
+                SectionLabel("Fingerprint")
+                Text(account.fingerprint, style = Type.mono, color = Look.c.text)
+                Gap(Sp.xs)
+                Muted("Read it out to someone who shares a vault with you, so they can check it is you.", style = Type.caption)
+            }
+            Gap(Sp.m)
             ServerSettings(state)
+            Gap(Sp.m)
             SecuritySettings(state)
-            if (open.account.canWrite(vaultId)) {
-                Text("Archive of “${account.vaultFile(vaultId).name}”", Modifier.padding(top = 16.dp),
-                    style = MaterialTheme.typography.titleSmall)
-                val days = open.purgeDays(vaultId)
-                listOf(0, 30, 90, 180, 365).forEach { choice ->
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { state.change { it.setPurgeDays(vaultId, choice) } }) {
-                        RadioButton(selected = days == choice, onClick = { state.change { it.setPurgeDays(vaultId, choice) } })
-                        Text(if (choice == 0) "Keep archived entries until I delete them" else "Delete them after $choice days")
+            if (account.canWrite(vaultId)) {
+                Gap(Sp.m)
+                Card {
+                    SectionLabel("Archive of “${account.vaultFile(vaultId).name}”")
+                    val days = open.purgeDays(vaultId)
+                    listOf(0, 30, 90, 180, 365).forEach { choice ->
+                        RadioRow(days == choice, if (choice == 0) "Keep archived entries until I delete them"
+                            else "Delete them after $choice days") { state.change { it.setPurgeDays(vaultId, choice) } }
                     }
                 }
             }
-            OutlinedButton(onClick = { removing = true }, Modifier.padding(top = 24.dp)) {
-                Text("Remove this account from this phone")
-            }
-            Text("SecretSpace for Android ${AppVersion.VERSION}", Modifier.padding(top = 24.dp),
-                style = MaterialTheme.typography.bodySmall)
+            Gap(Sp.l)
+            QuietButton("Remove this account from this phone", { password = ""; removing = true }, danger = true)
+            Gap(Sp.l)
+            Muted("SecretSpace for Android ${AppVersion.VERSION}", style = Type.caption)
         }
     }
     if (removing) AlertDialog(
-        onDismissRequest = { removing = false },
-        title = { Text("Remove “${account.username}” from this phone?") },
+        onDismissRequest = { removing = false }, containerColor = Look.c.card, shape = Radius.dialog,
+        title = { Text("Remove “${account.username}” from this phone?", style = Type.heading) },
         text = { Column {
             Text(if (account.server == null) "This account is on this phone only: removing it deletes all its " +
                 "passwords for good." else "The account stays on the server and your other devices. Changes not " +
-                "yet synced are lost.")
+                "yet synced are lost.", style = Type.body, color = Look.c.muted)
+            Gap(Sp.s)
             Field("Master password", password, { password = it }, secret = true)
         } },
-        confirmButton = { TextButton(onClick = {
-            if (!account.checkPassword(password)) return@TextButton state.say("That is not the master password.")
+        confirmButton = { DangerButton("Remove", {
+            if (!account.checkPassword(password)) return@DangerButton state.say("That is not the master password.")
             removing = false
             val name = account.username
             Biometric.turnOff(context, name)
             state.lock()
             state.store.deleteAccount(name)
-            val left = state.store.listAccounts()
-            state.screen = if (left.isEmpty()) Screen.SignIn else Screen.Unlock(left.first())
-        }) { Text("Remove") } },
-        dismissButton = { TextButton(onClick = { removing = false }) { Text("Cancel") } },
+            state.home()
+        }) },
+        dismissButton = { QuietButton("Cancel", { removing = false }) },
     )
 }
 
@@ -161,57 +163,56 @@ fun SettingsScreen(state: AppState) {
 fun ConflictDialog(state: AppState, question: Question) {
     val choices = remember(question) { mutableStateMapOf<String, String>() }
     AlertDialog(
-        onDismissRequest = { },
-        title = { Text("“${question.vaultName}”: ${question.result.conflicts.size} to decide") },
+        onDismissRequest = { }, containerColor = Look.c.card, shape = Radius.dialog,
+        title = { Text("“${question.vaultName}”: ${question.result.conflicts.size} to decide", style = Type.heading) },
         text = {
-            LazyColumn(Modifier.heightIn(max = 480.dp)) {
+            LazyColumn(Modifier.heightIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(Sp.s)) {
                 items(question.result.conflicts, key = { it.id }) { c ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Column(Modifier.padding(10.dp)) {
-                            Text(c.site.ifEmpty { "(no name)" }, style = MaterialTheme.typography.titleSmall)
-                            Text(when (c.kind) {
-                                "archive" -> "Archived on one side, changed on the other."
-                                "purge" -> "Deleted on one side, changed on the other."
-                                "missing" -> "Here, but not on the server (an older or other copy there)."
-                                else -> "Changed here and on another device."
-                            }, style = MaterialTheme.typography.bodySmall)
-                            if (c.local != null && c.remote != null) {
-                                val differ = secretspace.core.Entries.changedFields(c.local!!, c.remote!!)
-                                if (differ.isNotEmpty()) Text("Differs in: " + differ.joinToString(", ") {
-                                    if (it == "site") "name" else if (it == "totp") "2FA" else if (it == "url") "web address" else it
-                                }, style = MaterialTheme.typography.bodySmall)
-                            }
-                            side("Here", c.local)
-                            side("On the server", c.remote)
-                            val chosen = choices[c.id] ?: Merge.KEEP_BOTH
-                            listOf(Merge.KEEP_LOCAL to "Keep this phone's", Merge.KEEP_REMOTE to "Keep the server's",
-                                Merge.KEEP_BOTH to "Keep both").forEach { (value, label) ->
-                                Row(verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.clickable { choices[c.id] = value }) {
-                                    RadioButton(selected = chosen == value, onClick = { choices[c.id] = value })
-                                    Text(label)
-                                }
-                            }
+                    Column(Modifier.fillMaxWidth().clip(Radius.row).background(Look.c.input).padding(Sp.m)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Tile(c.site, 32.dp)
+                            Spacer(Modifier.width(Sp.s))
+                            Text(c.site.ifEmpty { "(no name)" }, style = Type.bodyBold, color = Look.c.text)
+                        }
+                        Gap(Sp.xs)
+                        Muted(when (c.kind) {
+                            "archive" -> "Archived on one side, changed on the other."
+                            "purge" -> "Deleted on one side, changed on the other."
+                            "missing" -> "Here, but not on the server (an older or other copy there)."
+                            else -> "Changed here and on another device."
+                        }, style = Type.caption)
+                        if (c.local != null && c.remote != null) {
+                            val differ = secretspace.core.Entries.changedFields(c.local!!, c.remote!!)
+                            if (differ.isNotEmpty()) Muted("Differs in: " + differ.joinToString(", ") {
+                                if (it == "site") "name" else if (it == "totp") "2FA" else if (it == "url") "web address" else it
+                            }, style = Type.caption)
+                        }
+                        side("Here", c.local)
+                        side("On the server", c.remote)
+                        val chosen = choices[c.id] ?: Merge.KEEP_BOTH
+                        listOf(Merge.KEEP_LOCAL to "Keep this phone's", Merge.KEEP_REMOTE to "Keep the server's",
+                            Merge.KEEP_BOTH to "Keep both").forEach { (value, label) ->
+                            RadioRow(chosen == value, label) { choices[c.id] = value }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = {
+        confirmButton = { MainButton("Done", {
             state.answer(question.result.conflicts.associate { it.id to (choices[it.id] ?: Merge.KEEP_BOTH) })
-        }) { Text("Done") } },
-        dismissButton = { TextButton(onClick = { state.answer(null) }) { Text("Later") } },
+        }) },
+        dismissButton = { QuietButton("Later", { state.answer(null) }) },
     )
 }
 
 @Composable
 private fun side(label: String, entry: Obj?) {
-    Text("$label: " + if (entry == null) "deleted" else
+    Muted("$label: " + if (entry == null) "deleted" else
         listOfNotNull(Py.text(entry, "username").takeIf { it.isNotEmpty() },
-            Py.text(entry, "updated_at").takeIf { it.isNotEmpty() }?.let { "changed $it" },
+            Py.text(entry, "updated_at").takeIf { it.isNotEmpty() }?.let { "changed ${Times.long(it)}" },
             Py.text(entry, "updated_by").takeIf { it.isNotEmpty() }?.let { "by $it" },
             if (Py.text(entry, "archived_at").isNotEmpty()) "archived" else null).joinToString(" · "),
-        style = MaterialTheme.typography.bodySmall)
+        style = Type.caption)
 }
 
 /**
@@ -223,25 +224,28 @@ private fun ServerSettings(state: AppState) {
     val open = state.open ?: return
     val server = open.account.server
     var leaving by remember { mutableStateOf(false) }
-    Text("Sync server", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
-    if (server == null) {
-        Text("This account is on this phone only. If the phone is lost, broken or reset, its passwords are gone. " +
-            "Put it on your SecretSpace server to keep a copy there and use it on your PCs.",
-            style = MaterialTheme.typography.bodySmall)
-        OutlinedButton(onClick = { state.screen = Screen.Connect }, Modifier.padding(top = 4.dp)) {
-            Text("Connect to a server…")
+    Card {
+        SectionLabel("Sync server")
+        if (server == null) {
+            Text("On this phone only", style = Type.bodyBold, color = Look.c.text)
+            Muted("If the phone is lost, broken or reset, its passwords are gone. Put the account on your " +
+                "SecretSpace server to keep a copy there and use it on your PCs.")
+            Gap(Sp.m)
+            QuietButton("Connect to a server…", { state.screen = Screen.Connect })
+        } else {
+            Text(server.text("url") ?: "", style = Type.bodyBold, color = Look.c.text)
+            Muted("Changes go both ways each time you sync.")
+            Gap(Sp.m)
+            QuietButton("Stop syncing on this phone", { leaving = true })
         }
-    } else {
-        Text(server.text("url") ?: "")
-        TextButton(onClick = { leaving = true }) { Text("Stop syncing on this phone") }
     }
     if (leaving) AlertDialog(
-        onDismissRequest = { leaving = false },
-        title = { Text("Stop syncing on this phone?") },
+        onDismissRequest = { leaving = false }, containerColor = Look.c.card, shape = Radius.dialog,
+        title = { Text("Stop syncing on this phone?", style = Type.heading) },
         text = { Text("The entries stay on this phone and the server keeps its copy, but changes no longer go " +
-            "between them. You can connect again later.") },
-        confirmButton = { TextButton(onClick = { leaving = false; state.disconnect() }) { Text("Stop syncing") } },
-        dismissButton = { TextButton(onClick = { leaving = false }) { Text("Cancel") } },
+            "between them. You can connect again later.", style = Type.body, color = Look.c.muted) },
+        confirmButton = { MainButton("Stop syncing", { leaving = false; state.disconnect() }) },
+        dismissButton = { QuietButton("Cancel", { leaving = false }) },
     )
 }
 
@@ -260,26 +264,22 @@ fun ConnectScreen(state: AppState) {
         state.away = false
         if (it != null) certificate = it
     }
-    Column(Modifier.fillMaxSize()) {
-        Bar("Connect to a server", { state.screen = Screen.Settings })
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-            Text("“${open.account.username}” is made on your SecretSpace server with this Secret Key and master " +
-                "password, then synced. Your PCs can then sign in to it.", style = MaterialTheme.typography.bodyMedium)
-            Field("Server address", url, { url = it }, keyboard = KeyboardType.Uri,
-                supporting = "As on the PC, e.g. https://10.10.10.3:59872")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = { state.away = true; pick.launch(arrayOf("*/*")) }) {
-                    Text(if (certificate == null) "Server's certificate…" else "Certificate chosen ✓")
-                }
-                Spacer(Modifier.width(8.dp))
-                Text("The server.crt file the PC uses.", style = MaterialTheme.typography.bodySmall)
+    Page("Connect to a server", { state.screen = Screen.Settings }) {
+        Body {
+            Muted("“${open.account.username}” is made on your SecretSpace server with this Secret Key and master " +
+                "password, then synced. Your PCs can then sign in to it.", style = Type.body)
+            Gap(Sp.m)
+            Card {
+                Field("Server address", url, { url = it }, keyboard = KeyboardType.Uri,
+                    supporting = "As on the PC, e.g. https://10.10.10.3:59872")
+                CertificatePicker(certificate) { state.away = true; pick.launch(arrayOf("*/*")) }
+                Field("Sign-up code", code, { code = it }, secret = true,
+                    supporting = "The server's token: on the server, sudo secretspace-setup show-token. " +
+                        "Leave it empty if the account is on that server already.")
             }
-            Field("Sign-up code", code, { code = it }, secret = true,
-                supporting = "The server's token: on the server, sudo secretspace-setup show-token. " +
-                    "Leave it empty if the account is on that server already.")
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = { state.connect(url, certificate, code) }, enabled = state.busy == null && url.length > 8,
-                modifier = Modifier.fillMaxWidth()) { Text("Connect & sync") }
+            Gap(Sp.l)
+            MainButton("Connect & sync", { state.connect(url, certificate, code) }, Modifier.fillMaxWidth(),
+                enabled = state.busy == null && url.length > 8)
         }
     }
 }
@@ -295,10 +295,12 @@ private fun SecuritySettings(state: AppState) {
     var asking by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     val why = Biometric.whyNot(activity)
-    Text("Security", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
-    // The whole row is the switch: tapped anywhere, and read out with its label.
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.toggleable(
-        value = on, enabled = on || why == null, role = Role.Switch, onValueChange = { want ->
+    Card {
+        SectionLabel("Security")
+        SwitchRow("Unlock with fingerprint", why ?: ((if (Biometric.pinAllowed) "Your fingerprint, face or the phone's " +
+            "PIN opens this account again after a lock — so can anyone who knows the phone's PIN." else "Your " +
+            "fingerprint opens this account again after a lock.") + " The master password is still needed each " +
+            "time SecretSpace starts."), on, on || why == null) { want ->
             if (!want) {
                 Biometric.turnOff(activity, username)
                 on = false
@@ -306,25 +308,43 @@ private fun SecuritySettings(state: AppState) {
                 password = ""
                 asking = true
             }
-        })) {
-        Column(Modifier.weight(1f)) {
-            Text("Unlock with fingerprint")
-            Text(why ?: ((if (Biometric.pinAllowed) "Your fingerprint, face or the phone's PIN opens this account " +
-                "again after a lock — so can anyone who knows the phone's PIN." else "Your fingerprint opens this " +
-                "account again after a lock.") + " The master password is still needed each time SecretSpace starts."),
-                style = MaterialTheme.typography.bodySmall)
         }
-        Switch(checked = on, enabled = on || why == null, onCheckedChange = null)
+        Rule()
+        val autofill = activity.getSystemService(AutofillManager::class.java)
+        val ours = autofill?.hasEnabledAutofillServices() == true
+        Row(Modifier.padding(vertical = Sp.s), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Autofill", style = Type.bodyBold, color = Look.c.text)
+                Muted(when {
+                    autofill == null || !autofill.isAutofillSupported -> "This phone does not offer autofill to apps."
+                    ours -> "On: SecretSpace offers your logins in apps and browsers that support Android's autofill."
+                    else -> "Let SecretSpace fill in logins in other apps and browsers: choose it as the autofill service."
+                })
+            }
+            if (autofill?.isAutofillSupported == true) {
+                Spacer(Modifier.width(Sp.m))
+                QuietButton(if (ours) "Change" else "Turn on", {
+                    // Android's own settings: that is leaving the app, so it locks if left there.
+                    try {
+                        activity.startActivity(Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE,
+                            Uri.parse("package:" + activity.packageName)))
+                    } catch (e: Exception) {
+                        state.say("Open Android's settings → Passwords & accounts → Autofill service, and choose SecretSpace.")
+                    }
+                })
+            }
+        }
     }
     if (asking) AlertDialog(
-        onDismissRequest = { asking = false },
-        title = { Text("Unlock with fingerprint") },
+        onDismissRequest = { asking = false }, containerColor = Look.c.card, shape = Radius.dialog,
+        title = { Text("Unlock with fingerprint", style = Type.heading) },
         text = { Column {
-            Text("Enter the master password of “$username” to turn it on.")
+            Text("Enter the master password of “$username” to turn it on.", style = Type.body, color = Look.c.muted)
+            Gap(Sp.s)
             Field("Master password", password, { password = it }, secret = true)
         } },
-        confirmButton = { TextButton(onClick = {
-            if (!open.account.checkPassword(password)) return@TextButton state.say("That is not the master password.")
+        confirmButton = { MainButton("Turn on", {
+            if (!open.account.checkPassword(password)) return@MainButton state.say("That is not the master password.")
             asking = false
             state.away = true
             Biometric.turnOn(activity, username, password, {
@@ -336,29 +356,7 @@ private fun SecuritySettings(state: AppState) {
                 on = false
                 if (error != null) state.say(error)
             })
-        }) { Text("Turn on") } },
-        dismissButton = { TextButton(onClick = { asking = false }) { Text("Cancel") } },
+        }) },
+        dismissButton = { QuietButton("Cancel", { asking = false }) },
     )
-
-    val autofill = activity.getSystemService(AutofillManager::class.java)
-    val ours = autofill?.hasEnabledAutofillServices() == true
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 12.dp)) {
-        Column(Modifier.weight(1f)) {
-            Text("Autofill")
-            Text(when {
-                autofill == null || !autofill.isAutofillSupported -> "This phone does not offer autofill to apps."
-                ours -> "On: SecretSpace offers your logins in apps and browsers that support Android's autofill."
-                else -> "Let SecretSpace fill in logins in other apps and browsers: choose it as the autofill service."
-            }, style = MaterialTheme.typography.bodySmall)
-        }
-        if (autofill?.isAutofillSupported == true) OutlinedButton(onClick = {
-            // Android's own settings: that is leaving the app, so it locks if left there.
-            try {
-                activity.startActivity(Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE,
-                    Uri.parse("package:" + activity.packageName)))
-            } catch (e: Exception) {
-                state.say("Open Android's settings → Passwords & accounts → Autofill service, and choose SecretSpace.")
-            }
-        }) { Text(if (ours) "Change" else "Turn on") }
-    }
 }
