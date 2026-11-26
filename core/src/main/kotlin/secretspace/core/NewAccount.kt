@@ -1,5 +1,7 @@
 package secretspace.core
 
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
@@ -9,10 +11,12 @@ import secretspace.core.AccountCrypto as ac
 /**
  * An account made on this phone, in memory until [createOn] puts it on a
  * server and writes it here (the PC's accounts.NewAccount followed by
- * account_sync.connect). The app shows the Emergency Kit and the recovery
- * phrase first; leaving half-way writes nothing, and a failed [createOn]
- * (a mistyped sign-up code, no network) can be tried again with the same
- * Secret Key and words the user already wrote down.
+ * account_sync.connect), or [createHere] writes it on this phone only (the
+ * PC's NewAccount.save; [AccountSync.connect] can put it on a server later).
+ * The app shows the Emergency Kit and the recovery phrase first; leaving
+ * half-way writes nothing, and a failed [createOn] (a mistyped sign-up
+ * code, no network) can be tried again with the same Secret Key and words
+ * the user already wrote down.
  */
 class NewAccount private constructor(
     val username: String,
@@ -57,14 +61,17 @@ class NewAccount private constructor(
         return typed.toSortedMap().filter { (n, text) -> text.trim().lowercase() != words[n - 1] }.keys.toList()
     }
 
-    /** The Emergency Kit as a text file: accounts.emergency_kit_text, with the server named. */
-    fun emergencyKitText(serverUrl: String, created: String = Disk.utcNow()): String = listOf(
+    /**
+     * The Emergency Kit as a text file: accounts.emergency_kit_text, with
+     * the server named -- or none, for an account on this phone only.
+     */
+    fun emergencyKitText(serverUrl: String?, created: String = Disk.utcNow()): String = listOf(
         "SecretSpace Emergency Kit",
         "=====================",
         "",
         "Account:      $username",
         "Secret Key:   $secretKeyText",
-        "Server:       ${serverUrl.trimEnd('/')}",
+        "Server:       " + (serverUrl?.trimEnd('/') ?: "(none - this account is on this phone only)"),
         "Master password: ______________________________",
         "",
         "Made: $created",
@@ -99,10 +106,7 @@ class NewAccount private constructor(
                 signUp(server, signUpCode.trim())
                 server.login(username, loginKey)
             }
-            if (server.me()["personal_vault"]?.let { (it as? JsonPrimitive)?.content } != vaultId.toHex()) {
-                throw SyncError("The server's account “$username” has a different personal vault: it is " +
-                    "another account with the same name. Nothing was changed.")
-            }
+            AccountSync.checkPersonalVault(server, username, vaultId.toHex())
             val account = write(store, pw, JsonObject(mapOf(
                 "url" to JsonPrimitive(server.url), "ca_file" to JsonPrimitive(caFile))))
             password = null
@@ -112,32 +116,32 @@ class NewAccount private constructor(
         }
     }
 
-    private fun signUp(server: AccountServer, code: String) {
-        val body = JsonObject(mapOf(
-            "username" to JsonPrimitive(username),
-            "login_key" to JsonPrimitive(ac.b64(loginKey)),
-            "keyset" to JsonPrimitive(sealedKeyset),
-            "recovery" to JsonPrimitive(sealedRecovery),
-            "public_key" to JsonPrimitive(ac.b64(ac.publicKeyOf(keyset))),
-            "signing_key" to JsonPrimitive(ac.b64(ac.signingKeyOf(keyset))),
-            "recovery_proof" to JsonPrimitive(ac.b64(ac.recoveryProof(keyset))),
-            "personal_vault" to JsonPrimitive(vaultId.toHex()),
-        ))
-        try {
-            server.token = code
-            server.request("POST", "/v2/accounts", body)
-        } catch (e: Conflict409) {
-            throw SyncError("The server already has an account called “$username” with another master " +
-                "password or Secret Key — or it is someone else's. Nothing was changed.")
-        } catch (e: LoginFailed) {
-            throw LoginFailed("The server did not accept that sign-up code.")
-        } finally {
-            server.token = ""
-        }
+    private fun signUp(server: AccountServer, code: String) = AccountSync.signUp(server, code, username, JsonObject(mapOf(
+        "username" to JsonPrimitive(username),
+        "login_key" to JsonPrimitive(ac.b64(loginKey)),
+        "keyset" to JsonPrimitive(sealedKeyset),
+        "recovery" to JsonPrimitive(sealedRecovery),
+        "public_key" to JsonPrimitive(ac.b64(ac.publicKeyOf(keyset))),
+        "signing_key" to JsonPrimitive(ac.b64(ac.signingKeyOf(keyset))),
+        "recovery_proof" to JsonPrimitive(ac.b64(ac.recoveryProof(keyset))),
+        "personal_vault" to JsonPrimitive(vaultId.toHex()),
+    )))
+
+    /**
+     * Write the account on this phone only, with an empty personal vault
+     * and no server (the PC's NewAccount.save). Settings → Sync server can
+     * put it on one later.
+     */
+    fun createHere(store: AccountStore): Account {
+        val pw = password ?: throw IllegalStateException("This account was already created.")
+        if (store.accountExists(username)) throw IllegalStateException("There is already an account “$username”.")
+        val account = write(store, pw, JsonNull)
+        password = null
+        return account
     }
 
     /** NewAccount.save, with the server remembered: account.json last, as it makes it an account. */
-    private fun write(store: AccountStore, password: String, server: JsonObject): Account {
+    private fun write(store: AccountStore, password: String, server: JsonElement): Account {
         val folder = store.accountDir(username)
         if (folder.exists()) throw IllegalStateException(
             "A folder for “$username” is already there ($folder) but holds no account. Move it away to use this name.")

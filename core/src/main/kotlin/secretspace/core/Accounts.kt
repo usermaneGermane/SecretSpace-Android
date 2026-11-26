@@ -462,6 +462,26 @@ class Account internal constructor(
     /** {"url", "ca_file"} of the server this account syncs with, or null. */
     val server: JsonObject? get() = info.obj("server")?.takeIf { !it.text("url").isNullOrEmpty() }
 
+    /**
+     * Remember the server (null forgets it); account.json only (the PC's
+     * Account.set_server). The same server at a changed address keeps what
+     * this device knows about its vaults there; another server, or none,
+     * makes them this device's own again, to go on whichever comes next.
+     */
+    fun setServer(url: String?, caFile: String = "") {
+        val before = server?.text("url")
+        val after = url?.trimEnd('/')?.takeIf { it.isNotEmpty() }
+        var fresh = info.with("server" to (if (after == null) JsonNull else JsonObject(mapOf(
+            "url" to JsonPrimitive(after), "ca_file" to JsonPrimitive(caFile)))))
+        if (after != before && !Servers.same(after, before)) {
+            val serverOnly = setOf("on_server", "gone_from_server", "rename_pending", "role", "key_generation", "members")
+            fresh = fresh.with("vaults" to JsonObject(extra().mapValues { (_, record) ->
+                JsonObject((record as? JsonObject ?: JsonObject(emptyMap())).filterKeys { it !in serverOnly })
+            }))
+        }
+        writeInfo(fresh)
+    }
+
     fun checkPassword(password: String): Boolean = try {
         ac.unlockAccount(username, password, secret, Disk.readText(store.path(username, AccountStore.KEYSET_FILE)))
         true

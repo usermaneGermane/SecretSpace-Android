@@ -3,6 +3,13 @@ package io.github.usermanegermane.secretspace.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import android.view.autofill.AutofillManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
@@ -105,7 +112,7 @@ fun SettingsScreen(state: AppState) {
             Text("Fingerprint: ${account.fingerprint}", style = MaterialTheme.typography.bodySmall)
             Text("Read it out to someone who shares a vault with you, so they can check it is you.",
                 style = MaterialTheme.typography.bodySmall)
-            Text("Server: " + (account.server?.text("url") ?: "none"), Modifier.padding(top = 8.dp))
+            ServerSettings(state)
             SecuritySettings(state)
             if (open.account.canWrite(vaultId)) {
                 Text("Archive of “${account.vaultFile(vaultId).name}”", Modifier.padding(top = 16.dp),
@@ -130,7 +137,9 @@ fun SettingsScreen(state: AppState) {
         onDismissRequest = { removing = false },
         title = { Text("Remove “${account.username}” from this phone?") },
         text = { Column {
-            Text("The account stays on the server and your other devices. Changes not yet synced are lost.")
+            Text(if (account.server == null) "This account is on this phone only: removing it deletes all its " +
+                "passwords for good." else "The account stays on the server and your other devices. Changes not " +
+                "yet synced are lost.")
             Field("Master password", password, { password = it }, secret = true)
         } },
         confirmButton = { TextButton(onClick = {
@@ -203,6 +212,76 @@ private fun side(label: String, entry: Obj?) {
             Py.text(entry, "updated_by").takeIf { it.isNotEmpty() }?.let { "by $it" },
             if (Py.text(entry, "archived_at").isNotEmpty()) "archived" else null).joinToString(" · "),
         style = MaterialTheme.typography.bodySmall)
+}
+
+/**
+ * Settings -> Sync server: the server this account syncs with, or -- for
+ * one on this phone only -- putting it on one (the PC's Connect & sync).
+ */
+@Composable
+private fun ServerSettings(state: AppState) {
+    val open = state.open ?: return
+    val server = open.account.server
+    var leaving by remember { mutableStateOf(false) }
+    Text("Sync server", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
+    if (server == null) {
+        Text("This account is on this phone only. If the phone is lost, broken or reset, its passwords are gone. " +
+            "Put it on your SecretSpace server to keep a copy there and use it on your PCs.",
+            style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(onClick = { state.screen = Screen.Connect }, Modifier.padding(top = 4.dp)) {
+            Text("Connect to a server…")
+        }
+    } else {
+        Text(server.text("url") ?: "")
+        TextButton(onClick = { leaving = true }) { Text("Stop syncing on this phone") }
+    }
+    if (leaving) AlertDialog(
+        onDismissRequest = { leaving = false },
+        title = { Text("Stop syncing on this phone?") },
+        text = { Text("The entries stay on this phone and the server keeps its copy, but changes no longer go " +
+            "between them. You can connect again later.") },
+        confirmButton = { TextButton(onClick = { leaving = false; state.disconnect() }) { Text("Stop syncing") } },
+        dismissButton = { TextButton(onClick = { leaving = false }) { Text("Cancel") } },
+    )
+}
+
+/**
+ * Put an account that is on this phone only on a server: the address, its
+ * certificate and the sign-up code -- or no code, if the account is on that
+ * server already.
+ */
+@Composable
+fun ConnectScreen(state: AppState) {
+    val open = state.open ?: return
+    var url by remember { mutableStateOf("https://") }
+    var certificate by remember { mutableStateOf<Uri?>(null) }
+    var code by remember { mutableStateOf("") }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        state.away = false
+        if (it != null) certificate = it
+    }
+    Column(Modifier.fillMaxSize()) {
+        Bar("Connect to a server", { state.screen = Screen.Settings })
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+            Text("“${open.account.username}” is made on your SecretSpace server with this Secret Key and master " +
+                "password, then synced. Your PCs can then sign in to it.", style = MaterialTheme.typography.bodyMedium)
+            Field("Server address", url, { url = it }, keyboard = KeyboardType.Uri,
+                supporting = "As on the PC, e.g. https://10.10.10.3:59872")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(onClick = { state.away = true; pick.launch(arrayOf("*/*")) }) {
+                    Text(if (certificate == null) "Server's certificate…" else "Certificate chosen ✓")
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("The server.crt file the PC uses.", style = MaterialTheme.typography.bodySmall)
+            }
+            Field("Sign-up code", code, { code = it }, secret = true,
+                supporting = "The server's token: on the server, sudo secretspace-setup show-token. " +
+                    "Leave it empty if the account is on that server already.")
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = { state.connect(url, certificate, code) }, enabled = state.busy == null && url.length > 8,
+                modifier = Modifier.fillMaxWidth()) { Text("Connect & sync") }
+        }
+    }
 }
 
 /** Settings -> Security: unlock with fingerprint (as Windows Hello on the PC), and autofill. */

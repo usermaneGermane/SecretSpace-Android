@@ -80,6 +80,7 @@ fun Root(state: AppState) {
                 is Screen.History -> HistoryScreen(state, screen.vaultId, screen.entryId)
                 is Screen.Archive -> ArchiveScreen(state, screen.vaultId)
                 Screen.Settings -> SettingsScreen(state)
+                Screen.Connect -> ConnectScreen(state)
             }
             state.busy?.let {
                 Column(Modifier.fillMaxWidth()) {

@@ -1,9 +1,9 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.2): make an account
-or sign in to one on your server, unlock with your fingerprint, and fill in
-logins in other apps.**
+a password manager with its own sync server. **Early version (0.3): make an account
+on the phone only or on your server, or sign in to one there; unlock with your
+fingerprint, and fill in logins in other apps.**
 
 It opens the same accounts and vaults as the apps for
 [Windows](https://github.com/usermaneGermane/SecretSpace-Client-Windows) and
@@ -20,24 +20,29 @@ on your own network. The iPhone app is a separate project.
 | 3. Sync (the same three-way merge as the PC) | done |
 | 4. The app: list, details, edit, generator, 2FA codes (typed or scanned) | done (0.1.0) |
 | 5. A new account on the phone, fingerprint / face / PIN unlock, autofill | done (0.2.0) |
+| 6. An account on the phone only, put on a server later if you like | done (0.3.0) |
 
 ## Installing
 
 Download `SecretSpace-Android-<version>.apk` from the
 [Releases](https://github.com/usermaneGermane/SecretSpace-Android/releases) page and open it on
 the phone (Android 8.0 or newer; the phone asks once to allow installing apps
-from the browser or file manager). Then copy the server's certificate file
-(`server.crt`, the one the PC uses) to the phone, and either:
+from the browser or file manager). Then either:
 
-- **sign in** to an account you already have, with the server address (as on
-  the PC), that certificate file, your username, master password and the
-  Secret Key from the Emergency Kit; or
-- **create a new account**, with the server address, the certificate file and
-  the server's sign-up code (its token: `sudo secretspace-setup show-token` on
-  the server). As on the PC, you then save the Emergency Kit (a text file with
-  the Secret Key), write down the 12-word recovery phrase and type three of
-  its words back. Nothing is written until the server has the account; your
-  PCs can then sign in to it.
+- **create a new account on this phone only**: a username and master
+  password, nothing else. As on the PC, you then save the Emergency Kit (a
+  text file with the Secret Key), write down the 12-word recovery phrase and
+  type three of its words back. The phone holds the only copy: if it is lost
+  or reset, the passwords are gone. Settings → Sync server → **Connect to a
+  server** puts the account on your server later, with everything in it;
+- **create a new account on your server**: the same, plus the server address
+  (as on the PC), the server's certificate file (`server.crt`, the one the PC
+  uses, copied to the phone) and the server's sign-up code (its token:
+  `sudo secretspace-setup show-token` on the server). Nothing is written until
+  the server has the account; your PCs can then sign in to it; or
+- **sign in** to an account you already have on your server, with the server
+  address, that certificate file, your username, master password and the
+  Secret Key from the Emergency Kit.
 
 After that the master password alone opens the account on the phone. The app
 locks itself after a minute in the background, blocks screenshots, clears a
@@ -68,6 +73,10 @@ Android's cloud backup.
 - Archive, restore, delete for good, and the archive's keep-for setting.
 - Move an entry to another vault.
 - Sync, with the same questions as on the PC when both sides changed an entry.
+- **Sync server** (Settings): connect an account that is on this phone only
+  to a server (made there with the sign-up code, or, if the account is there
+  already, without one), or stop syncing on this phone: the entries stay
+  here and the server keeps its copy.
 
 ## How it is kept in step with the PC
 
