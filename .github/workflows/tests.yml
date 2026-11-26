@@ -3,7 +3,9 @@ name: tests
 # The Kotlin core against the PC client's CURRENT code: the test data is
 # made again from SecretSpace-Client-Windows main on every run, and what the
 # Kotlin port makes is opened by the PC's code. A format change on the PC
-# that the phone does not follow fails here.
+# that the phone does not follow fails here. The sign-in tests run against
+# the PC tests' copy of the server, over HTTPS, with accounts the PC's code
+# made; afterwards the PC's code opens the account folder the phone wrote.
 on:
   push:
     branches: [main]
@@ -35,8 +37,10 @@ jobs:
         run: |
           python -m pip install -r pc/requirements.txt
           python tools/make_vectors.py pc/sourceFiles
-      - name: Kotlin core
-        run: ./gradlew --no-daemon :core:test
+      - name: Kotlin core, signing in to a real server the PC filled
+        env:
+          SECRETSPACE_LAB_REQUIRED: "1"
+        run: python tools/lab_server.py pc/sourceFiles -- ./gradlew --no-daemon :core:test
       - name: The PC opens what Kotlin made
         run: python tools/check_on_pc.py pc/sourceFiles
       - uses: actions/upload-artifact@v4
