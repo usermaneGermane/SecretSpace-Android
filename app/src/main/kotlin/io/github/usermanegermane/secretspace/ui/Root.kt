@@ -55,6 +55,10 @@ fun Root(state: AppState) {
                 Screen.Vaults -> VaultsScreen(state)
                 is Screen.Members -> MembersScreen(state, screen.vaultId)
                 is Screen.Activity -> ActivityScreen(state, screen.vaultId)
+                Screen.NewPhrase -> NewPhraseScreen(state)
+                is Screen.Recover -> RecoverScreen(state, screen.username)
+                Screen.RecoverPassword -> RecoverPasswordScreen(state)
+                Screen.RecoverKit -> RecoverKitScreen(state)
                 is Screen.ServerLog -> ServerLogScreen(state, screen.vaultId)
                 Screen.Connect -> ConnectScreen(state)
             }

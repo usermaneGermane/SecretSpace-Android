@@ -155,22 +155,7 @@ fun CreateWordsScreen(state: AppState) {
         Body {
             StepHead(3, "Your recovery phrase", "These 12 words open your account if you forget your master " +
                 "password. Write them on paper, in order.")
-            // Two columns, 1-6 down the left and 7-12 down the right: no word is ever cut in two.
-            val words = made.recoveryPhrase.split(" ")
-            Row(Modifier.fillMaxWidth().clip(Radius.card).background(Look.c.card).padding(Sp.l)) {
-                listOf(0, 6).forEach { start ->
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Sp.s)) {
-                        for (i in start until start + 6) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("${i + 1}", style = Type.caption, color = Look.c.muted, textAlign = TextAlign.End,
-                                    modifier = Modifier.width(22.dp))
-                                Spacer(Modifier.width(Sp.s))
-                                Text(words[i], style = Type.mono, color = Look.c.text, maxLines = 1, softWrap = false)
-                            }
-                        }
-                    }
-                }
-            }
+            WordGrid(made.recoveryPhrase)
             Gap(Sp.m)
             Muted("Anyone with these words can open everything in this account. Keep them like a passport: not in " +
                 "a file or a photo, and not with the Emergency Kit. SecretSpace does not show them again.")
@@ -178,6 +163,26 @@ fun CreateWordsScreen(state: AppState) {
             MainButton("I wrote them down", { state.screen = Screen.CreateCheck }, Modifier.fillMaxWidth())
             Gap(Sp.xs)
             LinkButton("Cancel", { state.cancelCreate() }, muted = true)
+        }
+    }
+}
+
+/** The 12 words in two columns, 1-6 down the left and 7-12 down the right: no word is ever cut in two. */
+@Composable
+fun WordGrid(phrase: String) {
+    val words = phrase.split(" ")
+    Row(Modifier.fillMaxWidth().clip(Radius.card).background(Look.c.card).padding(Sp.l)) {
+        listOf(0, 6).forEach { start ->
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Sp.s)) {
+                for (i in start until minOf(start + 6, words.size)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("${i + 1}", style = Type.caption, color = Look.c.muted, textAlign = TextAlign.End,
+                            modifier = Modifier.width(22.dp))
+                        Spacer(Modifier.width(Sp.s))
+                        Text(words[i], style = Type.mono, color = Look.c.text, maxLines = 1, softWrap = false)
+                    }
+                }
+            }
         }
     }
 }

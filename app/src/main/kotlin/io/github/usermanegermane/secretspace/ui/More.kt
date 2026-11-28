@@ -115,6 +115,8 @@ fun SettingsScreen(state: AppState) {
                 Muted("Read it out to someone who shares a vault with you, so they can check it is you.", style = Type.caption)
             }
             Gap(Sp.m)
+            PasswordSettings(state)
+            Gap(Sp.m)
             ServerSettings(state)
             Gap(Sp.m)
             SecuritySettings(state)

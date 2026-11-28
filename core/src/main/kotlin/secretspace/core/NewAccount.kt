@@ -65,26 +65,8 @@ class NewAccount private constructor(
      * The Emergency Kit as a text file: accounts.emergency_kit_text, with
      * the server named -- or none, for an account on this phone only.
      */
-    fun emergencyKitText(serverUrl: String?, created: String = Disk.utcNow()): String = listOf(
-        "SecretSpace Emergency Kit",
-        "=====================",
-        "",
-        "Account:      $username",
-        "Secret Key:   $secretKeyText",
-        "Server:       " + (serverUrl?.trimEnd('/') ?: "(none - this account is on this phone only)"),
-        "Master password: ______________________________",
-        "",
-        "Made: $created",
-        "",
-        "You need the Secret Key and your master password to open this",
-        "account on another device, or on this one after it is reset.",
-        "Print this page or keep the file somewhere safe and offline. Do not",
-        "keep it in the same place as your master password.",
-        "",
-        "Your 12-word recovery phrase is NOT on this page, on purpose: it",
-        "opens the account on its own. Keep it apart from this kit.",
-        "",
-    ).joinToString("\n")
+    fun emergencyKitText(serverUrl: String?, created: String = Disk.utcNow()): String =
+        kitText(username, secretKeyText, serverUrl, created)
 
     /**
      * Put the account on the server at ``url`` (account_sync.connect: the

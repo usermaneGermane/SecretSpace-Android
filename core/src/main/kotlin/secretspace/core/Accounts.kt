@@ -172,6 +172,25 @@ class AccountStore(val home: File, val secrets: SecretStore = PasswordSecretStor
     }
 
     /** Remove the account's folder. The caller has checked the password. */
+    /** The recovery copy on this phone (an account in the format of SecretSpace 3 is not opened here). */
+    fun readRecoveryCopy(username: String): String {
+        if (readAnyInfo(username).int("format") == OLD_ACCOUNT_FORMAT) throw NeedsConversion(username)
+        return Disk.readText(path(username, RECOVERY_FILE))
+    }
+
+    /**
+     * After a recovery of an account on this phone only: the same keys under
+     * the new password and phrase, and the new Secret Key stored for the new
+     * password. The vault files are not touched (the PC's replace_keys).
+     */
+    fun replaceKeys(username: String, sealedKeyset: String, sealedRecovery: String, secret: ByteArray, password: String) {
+        val info = readAnyInfo(username)
+        if (info.int("format") == OLD_ACCOUNT_FORMAT) throw NeedsConversion(username)
+        Disk.writeText(path(username, KEYSET_FILE), sealedKeyset)
+        Disk.writeText(path(username, RECOVERY_FILE), sealedRecovery)
+        writeInfo(username, info.with("secret_key" to secrets.protect(secret, username, password)))
+    }
+
     fun deleteAccount(username: String) {
         val folder = accountDir(username)
         if (!File(folder, ACCOUNT_FILE).isFile) throw NoSuchElementException("There is no account “$username” on this device.")
@@ -480,6 +499,20 @@ class Account internal constructor(
             }))
         }
         writeInfo(fresh)
+    }
+
+    /**
+     * The same keyset under a new password; the vault files are not touched.
+     * ``beforeWrite(sealedKeyset, loginKey)`` runs first (AccountSync tells
+     * the server there): if it throws, nothing changes here either.
+     */
+    fun changePassword(newPassword: String, beforeWrite: ((String, ByteArray) -> Unit)? = null) {
+        val (sealed, login) = ac.resealWithNewPassword(username, keyset, newPassword, secret)
+        beforeWrite?.invoke(sealed, login)
+        val fresh = info.with("secret_key" to store.secrets.protect(secret, username, newPassword))
+        Disk.writeText(store.path(username, AccountStore.KEYSET_FILE), sealed)
+        writeInfo(fresh)
+        loginKey = login
     }
 
     fun checkPassword(password: String): Boolean = try {
