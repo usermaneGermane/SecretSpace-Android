@@ -86,6 +86,8 @@ class OpenAccountTest {
         assertEquals(listOf("A", "b", "c", "d"), sites(open.entries(p, order = "name_asc")))
         assertEquals(listOf("d", "c", "b", "A"), sites(open.entries(p, order = "name_desc")))
         assertEquals(listOf("c"), sites(open.entries(p, query = "SHOP")))
+        open.change(p) { d -> Entries.accountsOf(d).first()["notes"] = "shop list" }
+        assertEquals(listOf("c"), sites(open.entries(p, query = "SHOP")), "notes are not searched, as on the PC")
     }
 
     @Test fun aReadersVaultAndANewerAppsAreNotChanged() {

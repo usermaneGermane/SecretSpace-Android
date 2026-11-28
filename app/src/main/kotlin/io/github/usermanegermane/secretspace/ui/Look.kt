@@ -138,10 +138,11 @@ private val shapes = Shapes(
     large = Radius.card, extraLarge = Radius.dialog,
 )
 
-/** The PC's look (DESIGN-LOOK.md): light or dark as the phone is set, Manrope, one green. */
+/** The PC's look (DESIGN-LOOK.md): light or dark as the phone is set (or as chosen), Manrope, one green. */
 @Composable
 fun SecretSpaceTheme(content: @Composable () -> Unit) {
-    val colors = Colors(isSystemInDarkTheme())
+    val system = isSystemInDarkTheme()
+    val colors = Colors(io.github.usermanegermane.secretspace.Prefs.isDark(system))
     CompositionLocalProvider(LocalColors provides colors) {
         MaterialTheme(colorScheme = scheme(colors), typography = typography, shapes = shapes, content = content)
     }

@@ -29,6 +29,11 @@ import secretspace.core.Disk.text
 fun PasswordSettings(state: AppState) {
     val open = state.open ?: return
     var changing by remember { mutableStateOf(false) }
+    val kit = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) {
+        state.away = false
+        if (it != null) state.saveText(it, kitText(open.account.username, open.account.secretKeyText,
+            open.account.server?.text("url")), "Emergency Kit saved — print it or keep it offline")
+    }
     Card {
         SectionLabel("Master password")
         Muted(if (open.account.server != null) "A new one is changed on the server first; your other devices then " +
@@ -36,6 +41,15 @@ fun PasswordSettings(state: AppState) {
             style = Type.caption)
         Gap(Sp.s)
         QuietButton("Change master password…", { changing = true }, enabled = state.busy == null)
+        Rule()
+        SectionLabel("Emergency Kit")
+        Muted("Your Secret Key again — with the master password it opens this account on another device.",
+            style = Type.caption)
+        Gap(Sp.s)
+        QuietButton("Save kit…", {
+            state.away = true
+            kit.launch("SecretSpace Emergency Kit - ${open.account.username}.txt")
+        })
         Rule()
         SectionLabel("Recovery phrase")
         Muted("12 words that open the account if the master password is forgotten. Lost them, or someone saw " +

@@ -8,6 +8,7 @@ class SecretSpaceApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        Prefs.load(this)
         state = AppState(this)
     }
 }
