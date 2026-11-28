@@ -69,6 +69,23 @@ class VaultsTest {
         assertFailsWith<IllegalArgumentException> { open.renameVault(open.account.personalId, "Mine") }
     }
 
+    @Test fun allVaultsInOneList() {
+        val open = local()
+        val p = open.account.personalId
+        val home = open.createVault("Home")
+        open.change(p) { d -> Entries.accountsOf(d).add(linkedMapOf("id" to "1", "site" to "Bank", "username" to "me",
+            "password" to "x", "updated_at" to "2026-01-01T00:00:00Z")) }
+        open.change(home) { d -> Entries.accountsOf(d).add(linkedMapOf("id" to "1", "site" to "Alarm", "username" to "me",
+            "password" to "y", "updated_at" to "2026-02-01T00:00:00Z")) }
+        val shed = open.add(home, "Shed", "you", "z")
+        open.archive(home, shed["id"] as String)
+        // newest first across vaults; the same id in two vaults stays two entries, each with its vault
+        assertEquals(listOf(home to "Alarm", p to "Bank"), open.allEntries().map { it.first to it.second["site"] })
+        assertEquals(listOf(p to "Bank", home to "Alarm"), open.allEntries(order = "name_desc").map { it.first to it.second["site"] })
+        assertEquals(listOf("Alarm"), open.allEntries("ALA").map { it.second["site"] })
+        assertEquals(emptyList(), open.allEntries("Shed"), "archived entries are not in the list")
+    }
+
     // ------------------------------------------------------------------ with the lab server
     private val labFile = System.getenv("SECRETSPACE_LAB")?.takeIf { it.isNotEmpty() }
     private val lab by lazy { Json.parseToJsonElement(File(labFile!!).readText(Charsets.UTF_8)).jsonObject }

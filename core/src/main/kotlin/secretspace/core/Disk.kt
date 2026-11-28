@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter
 /** What this app is, as the server is told (X-SecretSpace-Client). */
 object AppVersion {
     const val PLATFORM = "android"
-    const val VERSION = "0.10.0"
+    const val VERSION = "0.11.0"
 }
 
 /** Files, names and JSON as the PC's vault.py and accounts.py have them. */

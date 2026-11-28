@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.10): make an account
+a password manager with its own sync server. **Early version (0.11): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -28,7 +28,8 @@ on your own network. The iPhone app is a separate project.
 | 11. A new master password, recovery with the 12 words, a new phrase, a delay after wrong passwords | done (0.8.0) |
 | 12. Import from other password managers, plain export, web addresses checked as on the PC | done (0.9.0) |
 | 13. Settings: appearance, sort, sync when I unlock, when it locks, the update check, the kit again | done (0.10.0) |
-| 14. All vaults in one list; the full round for 1.0 | next |
+| 14. All vaults in one list, and the vault picked for a new entry | done (0.11.0) |
+| 15. The full round for 1.0 | next |
 
 ## Installing
 
@@ -134,6 +135,9 @@ screen uses a colour of its own.
   request to GitHub for this app's releases; nothing is downloaded.
 - **Sort** the list by date or name (above the list), remembered. Search
   finds an entry by its name, username or web address, as on the PC.
+- **All vaults** (the vault menu above the list): every vault's entries in
+  one list, each row naming its vault, searched and sorted together. A new
+  entry asks which vault it goes to, as the PC's *Add an entry* does.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web

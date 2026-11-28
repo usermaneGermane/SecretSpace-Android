@@ -490,6 +490,8 @@ class AppState(private val context: Context) {
     }
 
     companion object {
+        /** state.vaultId for "All vaults". */
+        const val ALL = "*all*"
         const val DROP_NEW_ACCOUNT_MS = 10 * 60_000L
     }
 }

@@ -67,6 +67,8 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
     var url by remember { mutableStateOf(Py.text(entry, "url")) }
     var totp by remember { mutableStateOf(Py.text(entry, "totp")) }
     var notes by remember { mutableStateOf(Py.text(entry, "notes")) }
+    var target by remember { mutableStateOf(vaultId) }
+    val choices = if (entryId == null) open.vaults().filter { it.canWrite } else emptyList()
     var generating by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }
     val totpProblem = Totp.check(totp)
@@ -74,6 +76,13 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
     val back = { state.screen = if (entryId == null) Screen.Vault else Screen.Entry(vaultId, entryId) }
     Page(if (entry == null) "New entry" else "Edit entry", back) {
         Body {
+            if (choices.size > 1) {
+                Card {
+                    SectionLabel("Vault")
+                    choices.forEach { v -> RadioRow(target == v.id, v.name) { target = v.id } }
+                }
+                Gap(Sp.m)
+            }
             Card {
                 Field("Name", site, { site = it })
                 Field("Username", username, { username = it })
@@ -98,7 +107,7 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
                 val fields = mapOf("site" to site.trim(), "username" to username.trim(), "password" to password,
                     "url" to cleanUrl, "totp" to totp.trim(), "notes" to notes)
                 if (entryId == null) {
-                    state.change { it.add(vaultId, fields.getValue("site"), fields.getValue("username"), password,
+                    state.change { it.add(target, fields.getValue("site"), fields.getValue("username"), password,
                         notes, fields.getValue("totp"), fields.getValue("url")) }
                     state.screen = Screen.Vault
                 } else {
