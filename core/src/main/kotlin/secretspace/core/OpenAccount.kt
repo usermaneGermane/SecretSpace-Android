@@ -19,6 +19,11 @@ class ReadOnlyVault(message: String) : Exception(message)
  * Not thread-safe: the app calls it from one thread (or one at a time).
  */
 class OpenAccount(val account: Account) {
+    companion object {
+        /** As many lines of a vault's change log as the PC's Activity shows. */
+        const val ACTIVITY_SHOWN = 200
+    }
+
     val data = linkedMapOf<String, Obj>()
 
     class VaultInfo(val id: String, val name: String, val role: String, val canWrite: Boolean,
@@ -184,6 +189,40 @@ class OpenAccount(val account: Account) {
             AccountSync.changeKey(account, it, vaultId, data.getValue(vaultId), remove)
         }
     }
+
+    // ------------------------------------------------------------------ activity (the PC's Activity window)
+    class ActivityRow(val at: String, val by: String, val what: String, val state: String)
+
+    /** The vault's change log, newest first (the last 200), each line's signature checked. */
+    fun activity(vaultId: String): List<ActivityRow> {
+        val hex = account.vaultFile(vaultId).hex
+        return Changelog.linesOf(data[vaultId]).takeLast(ACTIVITY_SHOWN).reversed().map { line ->
+            val by = Py.text(line, "by")
+            ActivityRow(Py.text(line, "at"), by, Changelog.describe(line),
+                Changelog.check(line, hex, account.signingKeyFor(by)))
+        }
+    }
+
+    /** Fetch the keys of people this phone has not met, so their lines can be checked (not marked as compared). */
+    fun fetchKeys(names: Collection<String>) = AccountSync.sharing(account) { server ->
+        for (who in names) {
+            val keys = try {
+                AccountSync.lookupContact(account, server, who)
+            } catch (e: SyncError) {
+                continue                                // no such account any more
+            }
+            if (keys.status == "new") AccountSync.trustContact(account, keys, false)
+        }
+    }
+
+    /** What the server noted about the vault, newest first: (when, "who did what · from where"). Owners only. */
+    fun serverLog(vaultId: String): List<Pair<String, String>> =
+        AccountSync.sharing(account) { it.vaultLog(vaultId) }.reversed().map { line ->
+            val plain = Py.asObj(Py.native(line))!!
+            val address = Py.text(plain, "address")
+            Py.text(plain, "at") to ((if ("by" in plain) Py.str(plain["by"]) else "?") + " " +
+                Changelog.describeServerLine(plain) + if (address.isNotEmpty()) "   ·   from $address" else "")
+        }
 
     /** Where a vault lives, in words (the PC's vaults_ui._status); ``true`` when it is a warning. */
     fun vaultStatus(vaultId: String): Pair<String, Boolean> {

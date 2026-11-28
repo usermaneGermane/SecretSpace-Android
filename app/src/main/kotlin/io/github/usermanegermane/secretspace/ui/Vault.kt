@@ -73,6 +73,9 @@ fun VaultScreen(state: AppState) {
                     DropdownMenuItem(text = { Text("Archive of “${current.name}”", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Archive(current.id)
                     })
+                    DropdownMenuItem(text = { Text("Activity in “${current.name}”", style = Type.body) }, onClick = {
+                        menu = false; state.screen = Screen.Activity(current.id)
+                    })
                     DropdownMenuItem(text = { Text("Vaults", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Vaults
                     })
