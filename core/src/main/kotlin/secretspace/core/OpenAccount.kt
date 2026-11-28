@@ -1,5 +1,7 @@
 package secretspace.core
 
+import secretspace.core.Disk.flag
+import secretspace.core.Disk.int
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -127,6 +129,53 @@ class OpenAccount(val account: Account) {
         }
         finishMoves()
         return moved
+    }
+
+    // ------------------------------------------------------------------ the vaults (the PC's Vaults window)
+    /** A new, empty vault on this phone; the next Sync puts it on the server. */
+    fun createVault(name: String): String {
+        val made = account.createVault(name)
+        data[made.hex] = made.load()
+        return made.hex
+    }
+
+    /** The owner's new name for a vault; told to the server at the next Sync. */
+    fun renameVault(vaultId: String, name: String) {
+        if (account.vaultRole(vaultId) != AccountStore.ROLE_OWNER) {
+            throw ReadOnlyVault("Only an owner of “${account.vaultFile(vaultId).name}” can rename it.")
+        }
+        account.renameVault(vaultId, name)
+    }
+
+    /** Delete it (or leave someone else's), on the server first. */
+    fun deleteVault(vaultId: String) {
+        AccountSync.deleteVault(account, vaultId)
+        data.remove(vaultId)
+    }
+
+    /** A vault deleted elsewhere and kept here goes back on the server at the next Sync. */
+    fun putVaultBack(vaultId: String) = AccountSync.putVaultBack(account, vaultId)
+
+    /** Where a vault lives, in words (the PC's vaults_ui._status); ``true`` when it is a warning. */
+    fun vaultStatus(vaultId: String): Pair<String, Boolean> {
+        if (vaultId == account.personalId) return "Your own vault. It comes with the account." to false
+        val record = account.vaultRecord(vaultId)
+        val role = account.vaultRole(vaultId)
+        if (record.flag("gone_from_server")) {
+            return (if (role != AccountStore.ROLE_OWNER) "No longer shared with you, or deleted. Kept on this " +
+                "phone only, and no longer synced." else "Deleted on another device. Kept on this phone only, " +
+                "and no longer synced.") to true
+        }
+        if (account.server == null) return "On this phone." to false
+        if (record.flag("on_server")) {
+            val others = (record.int("members") ?: 1) - 1
+            if (role != AccountStore.ROLE_OWNER) {
+                return "Shared with you — you are ${if (role == AccountStore.ROLE_EDITOR) "an editor" else "a reader"}." to false
+            }
+            if (others > 0) return "Shared with $others other ${if (others == 1) "person" else "people"}." to false
+            return "On the server — your other devices get it when they sync." to false
+        }
+        return "On this phone until the next sync puts it on the server." to false
     }
 
     // ------------------------------------------------------------------ housekeeping

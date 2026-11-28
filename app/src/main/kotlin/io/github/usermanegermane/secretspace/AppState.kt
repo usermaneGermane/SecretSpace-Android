@@ -39,6 +39,7 @@ sealed interface Screen {
     data class History(val vaultId: String, val entryId: String) : Screen
     data class Archive(val vaultId: String) : Screen
     data object Settings : Screen
+    data object Vaults : Screen
     data object Connect : Screen
 }
 

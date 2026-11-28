@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.4): make an account
+a password manager with its own sync server. **Early version (0.5): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -22,6 +22,8 @@ on your own network. The iPhone app is a separate project.
 | 5. A new account on the phone, fingerprint / face / PIN unlock, autofill | done (0.2.0) |
 | 6. An account on the phone only, put on a server later if you like | done (0.3.0) |
 | 7. The desktop's look: its colours, typeface, cards and tiles, light and dark | done (0.4.0) |
+| 8. Vaults: make, rename, delete or leave, put back | done (0.5.0) |
+| 9. Sharing a vault, the change log, password change and recovery, import and export, settings | next, towards 1.0 |
 
 ## Installing
 
@@ -75,6 +77,13 @@ screen uses a colour of its own.
   entries whose web address is that site come first (an app is matched by
   its name), and a search finds any other. New logins are not saved from
   other apps; add them in SecretSpace.
+- **Vaults** (menu → Vaults), as the PC's Vaults window: each vault with
+  where it lives; make one (it goes on the server at the next Sync), rename
+  one you own, delete one (on the server first, so it disappears from your
+  other devices; for every member if it is shared) or leave one someone
+  shared with you, both confirmed with the master password. A vault deleted
+  on another device is kept here, marked and not synced, until you delete
+  it here too or put it back.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web

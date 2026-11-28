@@ -222,6 +222,16 @@ class AccountServer(url: String, private val caFile: String = "", private val ti
     fun renameVault(vaultId: String, sealedName: String) =
         request("PUT", "/v2/vaults/$vaultId/name", obj("name" to sealedName))
 
+    /** The owner deletes the vault for every member. */
+    fun deleteVault(vaultId: String) {
+        request("DELETE", "/v2/vaults/$vaultId")
+    }
+
+    /** A member leaves (or an owner takes ``username`` out without a new key: not used by the app). */
+    fun leaveVault(vaultId: String, username: String) {
+        request("DELETE", "/v2/vaults/$vaultId/members/" + quote(username))
+    }
+
     class Stored(val blob: String?, val revision: Int)
 
     fun getVault(vaultId: String): Stored {
