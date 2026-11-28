@@ -156,6 +156,35 @@ class OpenAccount(val account: Account) {
     /** A vault deleted elsewhere and kept here goes back on the server at the next Sync. */
     fun putVaultBack(vaultId: String) = AccountSync.putVaultBack(account, vaultId)
 
+    // ------------------------------------------------------------------ sharing (the PC's Members window)
+    /** Why the vault cannot be shared now, or "". */
+    fun whyNotShare(vaultId: String) = AccountSync.whyNotShare(account, vaultId)
+
+    fun members(vaultId: String): List<AccountSync.Member> =
+        AccountSync.sharing(account) { AccountSync.listMembers(account, it, vaultId) }
+
+    /** Someone's keys from the server, to compare their fingerprint before sharing or trusting them. */
+    fun lookUp(username: String): AccountSync.ContactKeys =
+        AccountSync.sharing(account) { AccountSync.lookupContact(account, it, username.trim()) }
+
+    /** After the fingerprint was compared and matched. */
+    fun share(vaultId: String, keys: AccountSync.ContactKeys, role: String) =
+        AccountSync.sharing(account) { AccountSync.shareVault(account, it, vaultId, keys, role) }
+
+    /** Members -> Check: the fingerprint matched, so this phone trusts these keys from now on. */
+    fun trust(keys: AccountSync.ContactKeys) = AccountSync.trustContact(account, keys, true)
+
+    fun setRole(vaultId: String, username: String, role: String) {
+        AccountSync.sharing(account) { it.putMember(vaultId, username, role) }
+    }
+
+    /** A new key for the vault, taking ``remove`` out in the same step; the vault is synced first. */
+    fun changeKey(vaultId: String, remove: Collection<String> = emptyList()) {
+        data[vaultId] = AccountSync.sharing(account) {
+            AccountSync.changeKey(account, it, vaultId, data.getValue(vaultId), remove)
+        }
+    }
+
     /** Where a vault lives, in words (the PC's vaults_ui._status); ``true`` when it is a warning. */
     fun vaultStatus(vaultId: String): Pair<String, Boolean> {
         if (vaultId == account.personalId) return "Your own vault. It comes with the account." to false

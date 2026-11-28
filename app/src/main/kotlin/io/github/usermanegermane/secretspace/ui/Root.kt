@@ -53,6 +53,7 @@ fun Root(state: AppState) {
                 is Screen.Archive -> ArchiveScreen(state, screen.vaultId)
                 Screen.Settings -> SettingsScreen(state)
                 Screen.Vaults -> VaultsScreen(state)
+                is Screen.Members -> MembersScreen(state, screen.vaultId)
                 Screen.Connect -> ConnectScreen(state)
             }
             state.busy?.let {

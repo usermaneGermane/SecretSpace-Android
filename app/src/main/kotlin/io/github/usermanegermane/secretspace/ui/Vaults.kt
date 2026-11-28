@@ -1,6 +1,8 @@
 package io.github.usermanegermane.secretspace.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +36,7 @@ private sealed interface VaultAsk {
  * The PC's Vaults window: every vault of the account with where it lives,
  * and making, renaming, deleting (or leaving) and putting back vaults.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VaultsScreen(state: AppState) {
     val open = state.open ?: return
@@ -58,8 +61,10 @@ fun VaultsScreen(state: AppState) {
                     }
                     Gap(Sp.xs)
                     Text(status, style = Type.small, color = if (warning) Look.c.warn else Look.c.muted)
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    FlowRow(Modifier.fillMaxWidth()) {
                         LinkButton("Open", { state.vaultId = v.id; state.screen = Screen.Vault })
+                        if (open.whyNotShare(v.id).isEmpty()) LinkButton(if (owner) "Share" else "Members",
+                            { state.screen = Screen.Members(v.id) })
                         if (!v.personal && owner && !warning) LinkButton("Rename", { ask = VaultAsk.Rename(v.id, v.name) })
                         if (warning) LinkButton("Put back", {
                             state.change("Saving…") { o ->

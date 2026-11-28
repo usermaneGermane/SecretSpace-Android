@@ -402,6 +402,134 @@ object AccountSync {
         account.vaultFile(vaultId).basePath.delete()      // agreed with a vault that is gone
     }
 
+    // ------------------------------------------------------------------ sharing (the PC's phase 4)
+    /** Why a vault cannot be shared right now, or "" when it can (sharing_ui.can_share). */
+    fun whyNotShare(account: Account, vaultId: String): String {
+        if (vaultId == account.personalId) return "The Personal vault is yours alone. Make another vault to share."
+        if (account.server == null) return "Put the account on a server first (Settings → Sync server)."
+        val record = account.vaultRecord(vaultId)
+        if (record.flag("gone_from_server")) return "This vault is no longer on the server."
+        if (!record.flag("on_server")) return "Press Sync once, so the vault is on the server."
+        return ""
+    }
+
+    /** A server session that can share, for ``work``; logged out after. */
+    fun <T> sharing(account: Account, work: (AccountServer) -> T): T {
+        val server = loggedIn(account)
+        try {
+            if (!server.hasSharing() || !server.hasSignedKeys()) throw SyncError(
+                "This server cannot share vaults yet: it needs SecretSpace Server 2.0.0 or newer.",
+            )
+            return work(server)
+        } finally {
+            server.logout()
+        }
+    }
+
+    /**
+     * Give the account behind ``keys`` (looked up, and its fingerprint
+     * confirmed by the user) the vault's key, wrapped so that only it can
+     * open it. The server stores the wrapped copy, never the key itself.
+     */
+    fun shareVault(account: Account, server: AccountServer, vaultId: String, keys: ContactKeys, role: String) {
+        if (account.vaultRole(vaultId) != AccountStore.ROLE_OWNER) throw SyncError("Only an owner of this vault can share it.")
+        val file = account.vaultFile(vaultId)
+        if (file.personal) throw SyncError("The personal vault cannot be shared; make another vault for that.")
+        val wrapped = ac.wrapKey(keys.publicKey, file.vaultKey, file.id, keys.username, file.fmt)
+        server.putMember(vaultId, keys.username, role, wrapped,
+            signKey(account, vaultId, file.generation, keys.username, wrapped))
+        trustContact(account, keys, true)
+        val count = (server.members(vaultId)["members"] as? JsonArray)?.size ?: 1
+        account.markVault(vaultId, "members" to JsonPrimitive(maxOf(1, count)))
+    }
+
+    class Member(val username: String, val role: String, val addedBy: String, val addedAt: String,
+                 val me: Boolean, val verified: Boolean)
+
+    /** The vault's members as the server lists them, with "me" and "fingerprint checked on this phone". */
+    fun listMembers(account: Account, server: AccountServer, vaultId: String): List<Member> {
+        val found = (server.members(vaultId)["members"] as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }.map { m ->
+            val name = m.text("username") ?: ""
+            Member(name, m.text("role") ?: "", m.text("added_by") ?: "", m.text("added_at") ?: "",
+                name == account.username, account.contact(name)?.verified == true)
+        }
+        account.markVault(vaultId, "members" to JsonPrimitive(maxOf(1, found.size)))
+        return found
+    }
+
+    /** Has every member (or every one of ``names``) an account in the current format? */
+    fun membersConverted(listing: JsonObject, names: Collection<String>? = null): Boolean {
+        val members = (listing["members"] as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }
+            .filter { names == null || (it.text("username") ?: "") in names }
+        return members.isNotEmpty() && members.all { ac.formatOf(it.int("format")) == ac.NOW }
+    }
+
+    /**
+     * Give a vault a new key, taking ``remove`` out in the same step (what
+     * Remove does), so a removed member can open nothing written afterwards.
+     * The vault is synced first, so what goes under the new key is what
+     * everybody agrees on; a sync that needs the user's decision stops this
+     * with nothing changed. Returns the vault's data as it now is here
+     * (the PC's account_sync.change_key).
+     */
+    fun changeKey(account: Account, server: AccountServer, vaultId: String, local: Obj,
+                  remove: Collection<String> = emptyList()): Obj {
+        if (account.vaultRole(vaultId) != AccountStore.ROLE_OWNER) throw SyncError("Only an owner of this vault can do that.")
+        val sync = VaultSync(account, server, vaultId)
+        val result = sync.prepare(local)
+        if (result.conflicts.isNotEmpty()) throw SyncError(
+            "This vault has changes here and on the server that need your decision. Press Sync first, then try again.",
+        )
+        val merged = sync.commit(local)
+        if (Entries.tooNew(merged)) throw SyncError(
+            "This vault was changed by a newer SecretSpace. Update SecretSpace, then try again.",
+        )
+        val file = sync.file
+        val listing = server.members(vaultId)
+        if ((listing.long("key_generation") ?: 0L) != file.generation) throw SyncError(
+            "This vault's key was changed on another device. Press Sync first, then try again.",
+        )
+        val names = (listing["members"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.text("username") }
+        val missing = remove.filter { it !in names }
+        if (missing.isNotEmpty()) throw SyncError("Not a member any more: " + missing.joinToString(", ") + ".")
+        val staying = names.filter { it !in remove }
+        // The new key in the current format once every member who stays has converted; else the old one.
+        val fmt = if (membersConverted(listing, staying)) ac.NOW else ac.OLD
+        val newKey = ac.newVaultKey()
+        val generation = file.generation + 1
+        val wrapped = linkedMapOf<String, String>()
+        for (name in staying) {
+            val public = if (name == account.username) ac.publicKeyOf(account.keyset) else {
+                val keys = lookupContact(account, server, name)
+                if (keys.status == "changed") throw KeyChanged(
+                    "The server now gives different keys for “$name” than this phone has seen before. Nothing " +
+                        "was changed. Check with $name (Members → Check), or remove them too.",
+                )
+                if (keys.status == "new") trustContact(account, keys, false)
+                keys.publicKey
+            }
+            wrapped[name] = ac.wrapKey(public, newKey, file.id, name, fmt)
+        }
+        val sigs = wrapped.mapValues { e -> JsonPrimitive(signKey(account, vaultId, generation, e.key, e.value)) }
+        val body = JsonObject(mapOf(
+            "generation" to JsonPrimitive(generation),
+            "remove" to JsonArray(remove.map { JsonPrimitive(it) }),
+            "wrapped_keys" to JsonObject(wrapped.mapValues { JsonPrimitive(it.value) }),
+            "key_sigs" to JsonObject(sigs),
+            "name" to JsonPrimitive(ac.sealVaultName(newKey, file.id, file.name, fmt)),
+            "blob" to JsonPrimitive(ac.encryptVault(newKey, file.id, generation,
+                Py.json(Entries.validateVault(Py.deepCopyObj(merged))), fmt)),
+            "revision" to JsonPrimitive(sync.revision),
+        ))
+        val view = server.rotate(vaultId, body)
+        // The server has it; now this phone. (Interrupted here, the next sync takes the key from the server.)
+        account.rekeyVault(vaultId, wrapped.getValue(account.username), generation.toInt())
+        account.markVault(vaultId, "key_signer" to JsonPrimitive(account.username))
+        account.vaultFile(vaultId).saveBase(merged, baseOrigin(server.url, view.int("revision") ?: (sync.revision + 1)))
+        account.markVault(vaultId, "members" to JsonPrimitive(staying.size))
+        return merged
+    }
+
     /** The vaults a sync covers: the personal one, and every other on the server. */
     fun syncableVaults(account: Account, server: AccountServer): List<String> {
         if (!server.hasVaults() || !server.hasSignedKeys()) return listOf(account.personalId)
