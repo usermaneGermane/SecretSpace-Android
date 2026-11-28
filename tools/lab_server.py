@@ -139,7 +139,7 @@ def vaults_of(account):
     out = {}
     for vault_id in account.vault_ids():
         file = account.vault_file(vault_id)
-        data = file.load()
+        data = file.load() if file.has_file else {"accounts": []}     # an empty vault has no file yet
         checks = [changelog.check(line, file.hex, account.signing_key_for(line["by"]))
                   for line in changelog.lines_of(data)]
         out[file.name] = {"data": data, "log": checks, "role": account.vault_role(vault_id),

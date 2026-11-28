@@ -40,6 +40,7 @@ sealed interface Screen {
     data class Archive(val vaultId: String) : Screen
     data object Settings : Screen
     data object Vaults : Screen
+    data class Members(val vaultId: String) : Screen
     data object Connect : Screen
 }
 

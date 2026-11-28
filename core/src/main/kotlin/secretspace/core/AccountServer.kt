@@ -222,6 +222,22 @@ class AccountServer(url: String, private val caFile: String = "", private val ti
     fun renameVault(vaultId: String, sealedName: String) =
         request("PUT", "/v2/vaults/$vaultId/name", obj("name" to sealedName))
 
+    /** Add a member or change their role; a new member comes with their wrapped key and its signature. */
+    fun putMember(vaultId: String, username: String, role: String, wrappedKey: String? = null,
+                  keySig: String? = null): JsonObject {
+        val body = linkedMapOf<String, JsonElement>("role" to JsonPrimitive(role))
+        if (!wrappedKey.isNullOrEmpty()) body["wrapped_key"] = JsonPrimitive(wrappedKey)
+        if (!keySig.isNullOrEmpty()) body["key_sig"] = JsonPrimitive(keySig)
+        return request("PUT", "/v2/vaults/$vaultId/members/" + quote(username), JsonObject(body))
+    }
+
+    /** A new key for the vault: every staying member's copy, the name and the vault under it, in one step. */
+    fun rotate(vaultId: String, body: JsonObject): JsonObject = request("POST", "/v2/vaults/$vaultId/rotate", body)
+
+    /** What the server itself recorded about the vault (uploads, members, keys), for its owners. */
+    fun vaultLog(vaultId: String): List<JsonObject> =
+        (request("GET", "/v2/vaults/$vaultId/log")["lines"] as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }
+
     /** The owner deletes the vault for every member. */
     fun deleteVault(vaultId: String) {
         request("DELETE", "/v2/vaults/$vaultId")
