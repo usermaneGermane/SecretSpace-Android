@@ -54,6 +54,7 @@ import io.github.usermanegermane.secretspace.Screen
 import secretspace.core.Passwords
 import secretspace.core.Py
 import secretspace.core.Totp
+import secretspace.core.Weblink
 import java.util.concurrent.Executors
 
 @Composable
@@ -69,6 +70,7 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
     var generating by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }
     val totpProblem = Totp.check(totp)
+    val (cleanUrl, urlProblem) = Weblink.clean(url)
     val back = { state.screen = if (entryId == null) Screen.Vault else Screen.Entry(vaultId, entryId) }
     Page(if (entry == null) "New entry" else "Edit entry", back) {
         Body {
@@ -80,7 +82,8 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
                 Meter(label, fraction)
                 QuietButton("Generate a password…", { generating = true })
                 Gap(Sp.s)
-                Field("Web address", url, { url = it }, keyboard = KeyboardType.Uri)
+                Field("Web address", url, { url = it }, keyboard = KeyboardType.Uri, error = urlProblem.isNotEmpty(),
+                    supporting = urlProblem.ifEmpty { "Optional, e.g. github.com/login" }.replaceFirstChar { it.uppercase() })
             }
             Gap(Sp.m)
             Card {
@@ -93,7 +96,7 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
             Gap(Sp.l)
             MainButton("Save", {
                 val fields = mapOf("site" to site.trim(), "username" to username.trim(), "password" to password,
-                    "url" to url.trim(), "totp" to totp.trim(), "notes" to notes)
+                    "url" to cleanUrl, "totp" to totp.trim(), "notes" to notes)
                 if (entryId == null) {
                     state.change { it.add(vaultId, fields.getValue("site"), fields.getValue("username"), password,
                         notes, fields.getValue("totp"), fields.getValue("url")) }
@@ -102,7 +105,8 @@ fun EditScreen(state: AppState, vaultId: String, entryId: String?) {
                     state.change { it.edit(vaultId, entryId, fields) }
                     state.screen = Screen.Entry(vaultId, entryId)
                 }
-            }, Modifier.fillMaxWidth(), enabled = site.isNotBlank() && totpProblem.isEmpty() && state.busy == null)
+            }, Modifier.fillMaxWidth(), enabled = site.isNotBlank() && totpProblem.isEmpty() && urlProblem.isEmpty() &&
+                state.busy == null)
         }
     }
     if (generating) GeneratorDialog({ generating = false }) { password = it; generating = false }

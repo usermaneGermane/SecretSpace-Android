@@ -43,6 +43,7 @@ import secretspace.core.Passwords
 import secretspace.core.Py
 import secretspace.core.Times
 import secretspace.core.Totp
+import secretspace.core.Weblink
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -97,7 +98,13 @@ fun EntryScreen(state: AppState, vaultId: String, entryId: String) {
             val (strength, fraction) = Passwords.strength(password)
             Meter(strength, fraction, Modifier.padding(horizontal = Sp.xs))
             Py.text(entry, "url").takeIf { it.isNotEmpty() }?.let { url ->
-                ValueCard("Web address", url) { QuietButton("Copy", { copy("Web address", url, false) }) }
+                ValueCard("Web address", url) {
+                    Weblink.openable(url)?.let { link ->
+                        QuietButton("Open", { openLink(context, link) })
+                        Spacer(Modifier.width(Sp.s))
+                    }
+                    QuietButton("Copy", { copy("Web address", url, false) })
+                }
             }
             Py.text(entry, "totp").takeIf { it.isNotEmpty() }?.let { TotpCard(it) { code -> copy("2FA code", code, true) } }
             Py.text(entry, "notes").takeIf { it.isNotEmpty() }?.let { notes ->
@@ -236,5 +243,16 @@ fun HistoryScreen(state: AppState, vaultId: String, entryId: String) {
                 }
             }
         }
+    }
+}
+
+/** Only http and https reach the browser (weblink.open_in_browser); a shared vault can be written by others. */
+fun openLink(context: android.content.Context, address: String) {
+    val link = Weblink.openable(address) ?: return
+    try {
+        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
+            .addCategory(android.content.Intent.CATEGORY_BROWSABLE))
+    } catch (e: android.content.ActivityNotFoundException) {
+        // no browser on this phone
     }
 }

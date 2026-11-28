@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.8): make an account
+a password manager with its own sync server. **Early version (0.9): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -26,7 +26,8 @@ on your own network. The iPhone app is a separate project.
 | 9. Sharing a vault: members, roles, the fingerprint check, remove with a new key | done (0.6.0) |
 | 10. Activity: the vault's signed change log, and the server's log for owners | done (0.7.0) |
 | 11. A new master password, recovery with the 12 words, a new phrase, a delay after wrong passwords | done (0.8.0) |
-| 12. Import and export, settings | next, towards 1.0 |
+| 12. Import from other password managers, plain export, web addresses checked as on the PC | done (0.9.0) |
+| 13. Settings: appearance, sort, sync when I unlock, auto-lock, updates | next, towards 1.0 |
 
 ## Installing
 
@@ -113,6 +114,16 @@ screen uses a colour of its own.
   the phone keeps its Secret Key sealed under the forgotten password, a new
   Emergency Kit. After three wrong master passwords each further try waits
   longer (5 s, 15 s, 1 min, 5 min), as on the PC.
+- **Import** (menu → Import into “…”): a CSV or JSON export from Chrome,
+  Firefox, Bitwarden, LastPass, KeePass and others, read as the PC reads it,
+  with notes and 2FA secrets. It says how many are new, skips duplicates,
+  and names what the file holds that SecretSpace cannot store (custom
+  fields, cards, attachments) before anything is added.
+- **Export** (menu → Export “…”), after a warning: CSV for another
+  password manager (archived entries left out) or JSON with everything,
+  byte for byte the files the PC writes.
+- A **web address** is checked as on the PC (only http and https; a bare
+  `github.com/login` gets `https://`), and **Open** shows it in the browser.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web
