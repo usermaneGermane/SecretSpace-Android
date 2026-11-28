@@ -50,6 +50,10 @@ fun VaultScreen(state: AppState) {
     var query by remember { mutableStateOf("") }
     var pickVault by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
+    var importing by remember { mutableStateOf(false) }
+    var exporting by remember { mutableStateOf(false) }
+    if (importing) ImportFlow(state, current.id, current.name) { importing = false }
+    if (exporting) ExportFlow(state, current.id, current.name) { exporting = false }
     val entries = open.entries(current.id, query)
     Column(Modifier.fillMaxSize().background(Look.c.bg)) {
         // The account, and what is done to all of it: as the PC's account card at the foot of its side bar.
@@ -75,6 +79,11 @@ fun VaultScreen(state: AppState) {
                     })
                     DropdownMenuItem(text = { Text("Activity in “${current.name}”", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Activity(current.id)
+                    })
+                    if (current.canWrite) DropdownMenuItem(text = { Text("Import into “${current.name}”…", style = Type.body) },
+                        onClick = { menu = false; importing = true })
+                    DropdownMenuItem(text = { Text("Export “${current.name}”…", style = Type.body) }, onClick = {
+                        menu = false; exporting = true
                     })
                     DropdownMenuItem(text = { Text("Vaults", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Vaults

@@ -190,6 +190,36 @@ class OpenAccount(val account: Account) {
         }
     }
 
+    // ------------------------------------------------------------------ import and export (the PC's dialogs)
+    class ImportPlan(val rows: List<Importers.Row>, val duplicates: Int, val dropped: List<String>) {
+        val carried get() = Importers.importedFields(rows)
+    }
+
+    /**
+     * What an import would add to the vault (dialogs._finish_import): rows
+     * that carry something, a nameless one called "(unknown)", and none that
+     * is already there or twice in the file (same name, username, password).
+     */
+    fun planImport(vaultId: String, parsed: Importers.Result): ImportPlan {
+        val seen = Entries.accountsOf(data.getValue(vaultId))
+            .map { Triple(Py.text(it, "site"), Py.text(it, "username"), Py.text(it, "password")) }.toMutableSet()
+        val fresh = mutableListOf<Importers.Row>()
+        var duplicates = 0
+        for (row in parsed.rows) {
+            if (row.site.isEmpty() && row.username.isEmpty() && row.password.isEmpty()) continue
+            val named = if (row.site.isEmpty()) Importers.Row("(unknown)", row.username, row.password, row.notes,
+                row.totp, row.url) else row
+            if (!seen.add(Triple(named.site, named.username, named.password))) duplicates++ else fresh += named
+        }
+        return ImportPlan(fresh, duplicates, parsed.dropped)
+    }
+
+    /** Add the planned rows in one change (one line in the log for many); a non-web address is not kept. */
+    fun importRows(vaultId: String, rows: List<Importers.Row>): Int = change(vaultId) { d ->
+        for (r in rows) Entries.addAccount(d, r.site, r.username, r.password, r.notes, r.totp, Weblink.openable(r.url) ?: "")
+        rows.size
+    }
+
     // ------------------------------------------------------------------ activity (the PC's Activity window)
     class ActivityRow(val at: String, val by: String, val what: String, val state: String)
 

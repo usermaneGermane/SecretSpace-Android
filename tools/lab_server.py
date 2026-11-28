@@ -233,6 +233,31 @@ def pc_action(name, body):
         import sharing_ui                                   # late: it brings the GUI toolkit
         return {"lines": [changelog.describe(line) for line in body.get("lines") or []],
                 "server_lines": [sharing_ui.describe_server_line(line) for line in body.get("server_lines") or []]}
+    if name == "imports":              # {files: {name: text}, links}: the PC's importers and weblink.clean
+        import importers
+        import weblink
+        out = {}
+        folder = os.path.join(LAB, "imports")
+        os.makedirs(folder, exist_ok=True)
+        for file_name, text in (body.get("files") or {}).items():
+            path = os.path.join(folder, file_name)
+            with open(path, "w", encoding="utf-8", newline="") as f:
+                f.write(text)
+            parsed = importers.parse_import_file(path)
+            out[file_name] = {"rows": [list(r) for r in parsed.rows], "dropped": parsed.dropped,
+                              "fields": importers.imported_fields(parsed.rows)}
+        return {"files": out, "links": [list(weblink.clean(t)) for t in body.get("links") or []]}
+    if name == "export":               # {data}: vault.export_csv and export_json, as text
+        folder = os.path.join(LAB, "exports")
+        os.makedirs(folder, exist_ok=True)
+        csv_path, json_path = os.path.join(folder, "out.csv"), os.path.join(folder, "out.json")
+        rows = vault.export_csv(body["data"], csv_path)
+        count = vault.export_json(body["data"], json_path)
+        with open(csv_path, encoding="utf-8", newline="") as f:
+            csv_text = f.read()
+        with open(json_path, encoding="utf-8", newline="") as f:
+            json_text = f.read()
+        return {"csv": csv_text, "csv_rows": rows, "json": json_text, "json_rows": count}
     if name == "check_folder":
         os.environ["SECRETSPACE_DATA_DIR"] = os.path.join(body["home"], "data")
         on_phone = accounts.unlock(body["username"], body["password"])
