@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.9): make an account
+a password manager with its own sync server. **Early version (0.10): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -27,7 +27,8 @@ on your own network. The iPhone app is a separate project.
 | 10. Activity: the vault's signed change log, and the server's log for owners | done (0.7.0) |
 | 11. A new master password, recovery with the 12 words, a new phrase, a delay after wrong passwords | done (0.8.0) |
 | 12. Import from other password managers, plain export, web addresses checked as on the PC | done (0.9.0) |
-| 13. Settings: appearance, sort, sync when I unlock, auto-lock, updates | next, towards 1.0 |
+| 13. Settings: appearance, sort, sync when I unlock, when it locks, the update check, the kit again | done (0.10.0) |
+| 14. All vaults in one list; the full round for 1.0 | next |
 
 ## Installing
 
@@ -52,7 +53,7 @@ from the browser or file manager). Then either:
   Secret Key from the Emergency Kit.
 
 After that the master password alone opens the account on the phone. The app
-locks itself after a minute in the background, blocks screenshots, clears a
+locks itself after a minute in the background (Settings → Security → Lock), blocks screenshots, clears a
 copied password from the clipboard after 30 seconds, and keeps nothing in
 Android's cloud backup.
 
@@ -124,6 +125,15 @@ screen uses a colour of its own.
   byte for byte the files the PC writes.
 - A **web address** is checked as on the PC (only http and https; a bare
   `github.com/login` gets `https://`), and **Open** shows it in the browser.
+- **Settings**, as on the PC: **Appearance** (as the phone is set, light or
+  dark); **Lock** (as soon as you leave the app, or after 1 to 60 minutes
+  away); **Sync when I unlock** (off until you turn it on; questions wait
+  for Sync); **Change address or certificate** of the server (no sign-up
+  code); **Save kit** again; **Updates**: Check for a new version, and a
+  check when the app starts (off until you turn it on). The check is one
+  request to GitHub for this app's releases; nothing is downloaded.
+- **Sort** the list by date or name (above the list), remembered. Search
+  finds an entry by its name, username or web address, as on the PC.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web

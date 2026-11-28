@@ -76,7 +76,7 @@ class OpenAccount(val account: Account) {
         val all = Entries.accountsOf(data.getValue(vaultId)).filter { Entries.isArchived(it) == archived }
         val q = query.trim().lowercase()
         val found = if (q.isEmpty()) all else all.filter { e ->
-            listOf("site", "username", "url", "notes").any { Py.text(e, it).lowercase().contains(q) }
+            listOf("site", "username", "url").any { Py.text(e, it).lowercase().contains(q) }
         }
         return if (archived) found.sortedByDescending { Py.text(it, "archived_at") } else sorted(found, order)
     }

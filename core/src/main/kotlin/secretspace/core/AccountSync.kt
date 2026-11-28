@@ -417,6 +417,11 @@ object AccountSync {
         }
     }
 
+    /** Settings -> Sync when I unlock: on this device, off until turned on (the PC's sync_on_unlock). */
+    fun syncOnUnlock(account: Account): Boolean = account.server != null && account.info.flag("sync_on_unlock")
+
+    fun setSyncOnUnlock(account: Account, on: Boolean) = account.setInfo("sync_on_unlock", JsonPrimitive(on))
+
     // ------------------------------------------------------------------ sharing (the PC's phase 4)
     /** Why a vault cannot be shared right now, or "" when it can (sharing_ui.can_share). */
     fun whyNotShare(account: Account, vaultId: String): String {

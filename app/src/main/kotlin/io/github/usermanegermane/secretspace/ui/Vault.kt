@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.usermanegermane.secretspace.AppState
+import io.github.usermanegermane.secretspace.Prefs
 import io.github.usermanegermane.secretspace.Screen
 import secretspace.core.Obj
 import secretspace.core.Py
@@ -54,7 +55,9 @@ fun VaultScreen(state: AppState) {
     var exporting by remember { mutableStateOf(false) }
     if (importing) ImportFlow(state, current.id, current.name) { importing = false }
     if (exporting) ExportFlow(state, current.id, current.name) { exporting = false }
-    val entries = open.entries(current.id, query)
+    val entries = open.entries(current.id, query, order = Prefs.sortOrder)
+    var sorting by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(Modifier.fillMaxSize().background(Look.c.bg)) {
         // The account, and what is done to all of it: as the PC's account card at the foot of its side bar.
         Row(Modifier.fillMaxWidth().padding(start = Sp.l, end = Sp.xs, top = Sp.s, bottom = Sp.s),
@@ -131,8 +134,22 @@ fun VaultScreen(state: AppState) {
                 }
             }
         }
-        Text(when (entries.size) { 1 -> "1 entry"; else -> "${entries.size} entries" },
-            style = Type.smallBold, color = Look.c.muted, modifier = Modifier.padding(horizontal = Sp.l + Sp.xs, vertical = Sp.xs))
+        Row(Modifier.fillMaxWidth().padding(start = Sp.l + Sp.xs, end = Sp.s), verticalAlignment = Alignment.CenterVertically) {
+            Text(when (entries.size) { 1 -> "1 entry"; else -> "${entries.size} entries" },
+                style = Type.smallBold, color = Look.c.muted, modifier = Modifier.weight(1f))
+            Box {
+                androidx.compose.material3.TextButton(onClick = { sorting = true }) {
+                    Text("Sort: " + Prefs.SORT_ORDERS.first { it.first == Prefs.sortOrder }.second + " ▾",
+                        style = Type.smallBold, color = Look.c.muted)
+                }
+                DropdownMenu(expanded = sorting, onDismissRequest = { sorting = false }, containerColor = Look.c.card) {
+                    Prefs.SORT_ORDERS.forEach { (value, label) ->
+                        DropdownMenuItem(text = { Text(label, style = if (value == Prefs.sortOrder) Type.bodyBold else Type.body) },
+                            onClick = { sorting = false; Prefs.setSortOrder(context, value) })
+                    }
+                }
+            }
+        }
         if (entries.isEmpty()) {
             Text(if (query.isBlank()) "No entries yet." else "Nothing matches “$query”.", style = Type.heading,
                 color = Look.c.muted, modifier = Modifier.fillMaxWidth().padding(top = 64.dp),

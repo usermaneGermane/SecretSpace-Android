@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import secretspace.core.AccountServer
+import secretspace.core.Disk.text
 import secretspace.core.AccountStore
 import secretspace.core.AccountSync
 import secretspace.core.Merge
@@ -100,6 +101,7 @@ class AppState(private val context: Context) {
 
     init {
         home()
+        if (Prefs.checkUpdates) checkForUpdate(quiet = true)
     }
 
     /** The first screen: an account's unlock, or the welcome when this phone has none. */
@@ -352,6 +354,18 @@ class AppState(private val context: Context) {
         if (unreadable.isNotEmpty()) say("Could not read: " + unreadable.joinToString(", "))
         val newer = account.vaults().filter { it.newerAppText.isNotEmpty() }
         if (newer.isNotEmpty()) say("Read only here: “${newer.first().name}” — update to ${newer.first().newerAppText}")
+        if (AccountSync.syncOnUnlock(account.account)) {
+            // As on the PC: by itself after the unlock; questions wait until Sync is pressed.
+            busy = "Syncing…"
+            try {
+                val report = withContext(Dispatchers.IO) { account.sync { _, _ -> null } }
+                val waiting = report.leftForLater
+                if (waiting.isNotEmpty()) say("Synced. Changes on both sides wait in " + waiting.joinToString(", ") +
+                    ": press Sync to decide.")
+            } catch (e: Exception) {
+                say("Sync did not run: ${e.message}")
+            }
+        }
     }
 
     fun lock() {
@@ -371,7 +385,7 @@ class AppState(private val context: Context) {
 
     fun cameBack() {
         val gone = if (leftAt == 0L) 0L else System.currentTimeMillis() - leftAt
-        if (!away && open != null && gone > LOCK_AFTER_MS) lock()
+        if (!away && open != null && leftAt != 0L && gone >= Prefs.lockMinutes * 60_000L) lock()
         // A new account half made keeps longer (the words are being written down), but not for ever.
         if (!away && creating != null && gone > DROP_NEW_ACCOUNT_MS) cancelCreate()
         if (!away && (recovering != null || recovered != null) && gone > DROP_NEW_ACCOUNT_MS) cancelRecovery()
@@ -424,13 +438,16 @@ class AppState(private val context: Context) {
         val account = open ?: return
         run("Connecting to the server…") {
             val address = url.trim()
-            val ca = withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: "" }
+            val kept = account.account.server?.text("ca_file") ?: ""
+            val ca = withContext(Dispatchers.IO) { certificate?.let { keepCertificate(it, address) } ?: kept }
+            val editing = account.account.server != null
             val outcome = withContext(Dispatchers.Default) {
                 AccountSync.connect(account.account, address, ca, code)
             }
             screen = Screen.Vault
             busy = "Syncing…"
-            val first = if (outcome == "created") "Account created on the server" else "Connected to the server"
+            val first = if (outcome == "created") "Account created on the server" else if (editing)
+                "Sync settings changed" else "Connected to the server"
             try {
                 say(first + ". " + syncNow(account))
             } catch (e: Exception) {
@@ -448,12 +465,31 @@ class AppState(private val context: Context) {
         }
     }
 
+    // ------------------------------------------------------------------ updates (the PC's update_check)
+    var newerRelease by mutableStateOf<secretspace.core.UpdateCheck.Release?>(null)
+        private set
+
+    /** Ask GitHub now; ``quiet`` (the check at start) says nothing when there is nothing new or no answer. */
+    fun checkForUpdate(quiet: Boolean = false) {
+        scope.launch {
+            try {
+                val found = withContext(Dispatchers.IO) { secretspace.core.UpdateCheck.latest() }
+                if (found != null && secretspace.core.UpdateCheck.isNewer(found.version)) {
+                    newerRelease = found
+                    say("SecretSpace ${found.version} is available (you have ${secretspace.core.AppVersion.VERSION}): " +
+                        "Settings → Updates")
+                } else if (!quiet) say("SecretSpace ${secretspace.core.AppVersion.VERSION} is the newest version")
+            } catch (e: Exception) {
+                if (!quiet) say("Could not check for a new version: ${e.message}")
+            }
+        }
+    }
+
     fun answer(choices: Map<String, String>?) {
         question?.answer?.complete(choices)
     }
 
     companion object {
-        const val LOCK_AFTER_MS = 60_000L
         const val DROP_NEW_ACCOUNT_MS = 10 * 60_000L
     }
 }

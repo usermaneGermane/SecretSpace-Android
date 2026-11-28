@@ -1,9 +1,13 @@
 package io.github.usermanegermane.secretspace
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.fragment.app.FragmentActivity
 import io.github.usermanegermane.secretspace.ui.Root
 import io.github.usermanegermane.secretspace.ui.SecretSpaceTheme
@@ -19,7 +23,16 @@ class MainActivity : FragmentActivity() {
         val labShots = BuildConfig.DEBUG && intent.getBooleanExtra("lab_screenshots", false)
         if (!labShots) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
-        setContent { SecretSpaceTheme { Root(state) } }
+        setContent {
+            // The system bars follow the app's own light or dark (Settings -> Appearance), not only the phone's.
+            val dark = Prefs.isDark(isSystemInDarkTheme())
+            LaunchedEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
+                    else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+            SecretSpaceTheme { Root(state) }
+        }
     }
 
     override fun onStart() {

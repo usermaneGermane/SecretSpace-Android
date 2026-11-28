@@ -35,6 +35,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import io.github.usermanegermane.secretspace.AppState
+import secretspace.core.AccountSync
+import io.github.usermanegermane.secretspace.Prefs
 import io.github.usermanegermane.secretspace.Biometric
 import io.github.usermanegermane.secretspace.Question
 import io.github.usermanegermane.secretspace.Screen
@@ -120,6 +122,10 @@ fun SettingsScreen(state: AppState) {
             ServerSettings(state)
             Gap(Sp.m)
             SecuritySettings(state)
+            Gap(Sp.m)
+            AppearanceSettings()
+            Gap(Sp.m)
+            UpdateSettings(state)
             if (account.canWrite(vaultId)) {
                 Gap(Sp.m)
                 Card {
@@ -236,8 +242,17 @@ private fun ServerSettings(state: AppState) {
             QuietButton("Connect to a server…", { state.screen = Screen.Connect })
         } else {
             Text(server.text("url") ?: "", style = Type.bodyBold, color = Look.c.text)
-            Muted("Changes go both ways each time you sync.")
-            Gap(Sp.m)
+            Muted("Changes go both ways each time you sync." + (open.account.serverVersion?.let {
+                "\nSecretSpace Server $it" } ?: ""))
+            Gap(Sp.s)
+            var atUnlock by remember(open) { mutableStateOf(AccountSync.syncOnUnlock(open.account)) }
+            SwitchRow("Sync when I unlock", "On this phone. Questions wait until you press Sync.", atUnlock, true) { on ->
+                AccountSync.setSyncOnUnlock(open.account, on)
+                atUnlock = on
+            }
+            Gap(Sp.s)
+            QuietButton("Change address or certificate…", { state.screen = Screen.Connect })
+            Gap(Sp.s)
             QuietButton("Stop syncing on this phone", { leaving = true })
         }
     }
@@ -259,16 +274,19 @@ private fun ServerSettings(state: AppState) {
 @Composable
 fun ConnectScreen(state: AppState) {
     val open = state.open ?: return
-    var url by remember { mutableStateOf("https://") }
+    val editing = open.account.server
+    var url by remember { mutableStateOf(editing?.text("url") ?: "https://") }
     var certificate by remember { mutableStateOf<Uri?>(null) }
     var code by remember { mutableStateOf("") }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
         state.away = false
         if (it != null) certificate = it
     }
-    Page("Connect to a server", { state.screen = Screen.Settings }) {
+    Page(if (editing != null) "Server address or certificate" else "Connect to a server", { state.screen = Screen.Settings }) {
         Body {
-            Muted("“${open.account.username}” is made on your SecretSpace server with this Secret Key and master " +
+            Muted(if (editing != null) "Change one or both — no sign-up code needed; your vaults stay in step. " +
+                "Leave the certificate unchosen to keep the one this phone has." else
+                "“${open.account.username}” is made on your SecretSpace server with this Secret Key and master " +
                 "password, then synced. Your PCs can then sign in to it.", style = Type.body)
             Gap(Sp.m)
             Card {
@@ -280,8 +298,12 @@ fun ConnectScreen(state: AppState) {
                         "Leave it empty if the account is on that server already.")
             }
             Gap(Sp.l)
-            MainButton("Connect & sync", { state.connect(url, certificate, code) }, Modifier.fillMaxWidth(),
-                enabled = state.busy == null && url.length > 8)
+            MainButton(if (editing != null) "Save & sync" else "Connect & sync", {
+                if (editing != null && url.trim().trimEnd('/') == editing.text("url") && certificate == null && code.isBlank()) {
+                    state.screen = Screen.Settings
+                    state.say("Nothing changed")
+                } else state.connect(url, certificate, code)
+            }, Modifier.fillMaxWidth(), enabled = state.busy == null && url.length > 8)
         }
     }
 }
@@ -311,6 +333,11 @@ private fun SecuritySettings(state: AppState) {
                 asking = true
             }
         }
+        Rule()
+        Text("Lock", style = Type.bodyBold, color = Look.c.text)
+        Muted("When SecretSpace is away from the screen. Locking does not clear a password you copied: that " +
+            "clears after 30 seconds.", style = Type.caption)
+        Prefs.LOCK_CHOICES.forEach { m -> RadioRow(Prefs.lockMinutes == m, Prefs.lockLabel(m)) { Prefs.setLockMinutes(activity, m) } }
         Rule()
         val autofill = activity.getSystemService(AutofillManager::class.java)
         val ours = autofill?.hasEnabledAutofillServices() == true
@@ -361,4 +388,39 @@ private fun SecuritySettings(state: AppState) {
         }) },
         dismissButton = { QuietButton("Cancel", { asking = false }) },
     )
+}
+
+/** Settings -> Appearance (the PC's "Light or dark"). */
+@Composable
+private fun AppearanceSettings() {
+    val context = LocalContext.current
+    Card {
+        SectionLabel("Appearance")
+        Prefs.APPEARANCES.forEach { (value, label) ->
+            RadioRow(Prefs.appearance == value, label) { Prefs.setAppearance(context, value) }
+        }
+    }
+}
+
+/** Settings -> Updates (the PC's update check): asked of GitHub only when you want; nothing is downloaded. */
+@Composable
+private fun UpdateSettings(state: AppState) {
+    val context = LocalContext.current
+    Card {
+        SectionLabel("Updates")
+        state.newerRelease?.let { r ->
+            Text("SecretSpace ${r.version} is available", style = Type.bodyBold, color = Look.c.text)
+            Gap(Sp.xs)
+            MainButton("Open its page", { openLink(context, r.page) })
+            Gap(Sp.s)
+        }
+        Muted("One request to GitHub for this app's releases; it sends nothing about you or your vaults. A newer " +
+            "version opens its download page: installing it stays your choice.", style = Type.caption)
+        Gap(Sp.s)
+        QuietButton("Check for a new version", { state.checkForUpdate() }, enabled = state.busy == null)
+        Gap(Sp.s)
+        SwitchRow("Check when SecretSpace starts", "Off until you turn it on.", Prefs.checkUpdates, true) {
+            Prefs.setCheckUpdates(context, it)
+        }
+    }
 }
