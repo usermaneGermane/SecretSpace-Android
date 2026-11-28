@@ -207,6 +207,16 @@ class AccountServer(url: String, private val caFile: String = "", private val ti
         request("PUT", "/v2/me/recovery-proof", obj("recovery_proof" to ac.b64(proof)))
     }
 
+    /** The account's recovery copy: it opens only with the 12 words. */
+    fun recoveryCopy(username: String) = request("GET", "/v2/recovery/" + quote(username))
+
+    /** The same keys under a new password and phrase, proven with the recovery proof. */
+    fun recover(body: JsonObject): JsonObject = request("POST", "/v2/recovery", body)
+
+    fun putRecovery(sealedRecovery: String) {
+        request("PUT", "/v2/me/recovery", obj("recovery" to sealedRecovery))
+    }
+
     fun publicKeys(username: String) = request("GET", "/v2/accounts/" + quote(username) + "/public-key")
 
     fun members(vaultId: String) = request("GET", "/v2/vaults/$vaultId/members")

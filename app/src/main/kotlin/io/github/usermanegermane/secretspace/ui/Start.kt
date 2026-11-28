@@ -112,6 +112,7 @@ fun UnlockScreen(state: AppState, username: String) {
             Gap(Sp.s)
             QuietButton("Unlock with fingerprint", { withFingerprint() }, Modifier.fillMaxWidth(), enabled = state.busy == null)
         }
+        LinkButton("Forgot your master password?", { state.screen = Screen.Recover(chosen) }, muted = true)
         Gap(Sp.s)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             LinkButton("Create an account", { state.screen = Screen.Create })
@@ -176,6 +177,7 @@ fun SignInScreen(state: AppState) {
             Gap(Sp.l)
             MainButton("Sign in", { state.signIn(url, certificate, username, password, kit) {} }, Modifier.fillMaxWidth(),
                 enabled = state.busy == null && url.length > 8 && username.isNotBlank() && password.isNotEmpty())
+            LinkButton("Forgot your master password?", { state.screen = Screen.Recover("") }, muted = true)
         }
     }
 }

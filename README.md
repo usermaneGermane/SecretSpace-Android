@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.7): make an account
+a password manager with its own sync server. **Early version (0.8): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -25,7 +25,8 @@ on your own network. The iPhone app is a separate project.
 | 8. Vaults: make, rename, delete or leave, put back | done (0.5.0) |
 | 9. Sharing a vault: members, roles, the fingerprint check, remove with a new key | done (0.6.0) |
 | 10. Activity: the vault's signed change log, and the server's log for owners | done (0.7.0) |
-| 11. Password change and recovery, import and export, settings | next, towards 1.0 |
+| 11. A new master password, recovery with the 12 words, a new phrase, a delay after wrong passwords | done (0.8.0) |
+| 12. Import and export, settings | next, towards 1.0 |
 
 ## Installing
 
@@ -102,6 +103,16 @@ screen uses a colour of its own.
   the phone has not met. Owners also see the **Server log**: uploads,
   members added and removed, key changes, with the address each came from.
   Values are never recorded, and neither is who looked at an entry.
+- **Master password and recovery phrase** (Settings), as on the PC:
+  **Change master password** (on a server, the server is changed first, so
+  the two never disagree; other devices sign in again with the new one) and
+  **New phrase** (the old words then open nothing). **Forgot your master
+  password?** on the unlock and sign-in screens opens the account with its
+  12 words: on this phone, or from its server on a phone that does not have
+  it. You choose a new master password and get a new phrase and, because
+  the phone keeps its Secret Key sealed under the forgotten password, a new
+  Emergency Kit. After three wrong master passwords each further try waits
+  longer (5 s, 15 s, 1 min, 5 min), as on the PC.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web

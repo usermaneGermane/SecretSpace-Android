@@ -20,7 +20,10 @@ import secretspace.core.Merge
 import secretspace.core.NeedsConversion
 import secretspace.core.NewAccount
 import secretspace.core.OpenAccount
+import secretspace.core.CryptoError
+import secretspace.core.Lockout
 import secretspace.core.PasswordSecretStore
+import secretspace.core.Recovery
 import secretspace.core.SecretKeyNeeded
 import java.io.File
 
@@ -42,6 +45,10 @@ sealed interface Screen {
     data object Vaults : Screen
     data class Members(val vaultId: String) : Screen
     data class Activity(val vaultId: String) : Screen
+    data object NewPhrase : Screen
+    data class Recover(val username: String) : Screen
+    data object RecoverPassword : Screen
+    data object RecoverKit : Screen
     data class ServerLog(val vaultId: String) : Screen
     data object Connect : Screen
 }
@@ -73,6 +80,16 @@ class AppState(private val context: Context) {
         private set
     var creating by mutableStateOf<Creating?>(null)
         private set
+    /** A recovery on its way: the keyset opened with the words, then the new keys made (not written yet). */
+    var recovering by mutableStateOf<Recovery.Opened?>(null)
+        private set
+    var recovered by mutableStateOf<Recovery.Pending?>(null)
+        private set
+    /** A new phrase being shown, not saved yet. */
+    var newPhrase by mutableStateOf<Recovery.NewPhrase?>(null)
+        private set
+    /** The delay after wrong master passwords (the PC's lockout). */
+    val lockout = Lockout(File(home, "unlock_failures.json"))
     var version by mutableIntStateOf(0)
         private set
 
@@ -207,13 +224,107 @@ class AppState(private val context: Context) {
     }
 
     fun unlock(username: String, password: String, kit: String?, onNeedsKit: () -> Unit) = run("Unlocking…") {
+        val wait = lockout.remaining(username)
+        if (wait > 0) throw IllegalStateException("Too many wrong tries. Wait $wait seconds, then try again.")
         try {
             val account = withContext(Dispatchers.Default) { store.unlock(username, password, kit) }
+            lockout.reset(username)
             opened(OpenAccount(account), password)
         } catch (e: SecretKeyNeeded) {
             onNeedsKit()
             throw e
+        } catch (e: CryptoError) {
+            val now = lockout.recordFailure(username)
+            throw CryptoError((e.message ?: "Wrong master password or Secret Key.") +
+                if (now > 0) " Wait $now seconds before the next try." else "")
         }
+    }
+
+    // ------------------------------------------------------------------ the master password and the phrase
+    /** Settings -> Change master password: the server first, then this phone; the fingerprint keeps working. */
+    fun changePassword(current: String, new: String, done: () -> Unit) {
+        val account = open?.account ?: return
+        run("Changing the master password…") {
+            withContext(Dispatchers.Default) {
+                if (!account.checkPassword(current)) throw IllegalArgumentException("That is not the current master password.")
+                AccountSync.changePassword(account, new)
+            }
+            Biometric.remember(context, account.username, new)
+            done()
+            say(if (account.server != null) "Master password changed, here and on the server. Your other devices " +
+                "sign in again with the new one." else "Master password changed")
+        }
+    }
+
+    fun startNewPhrase() {
+        val account = open?.account ?: return
+        newPhrase = Recovery.NewPhrase(account)
+        screen = Screen.NewPhrase
+    }
+
+    fun saveNewPhrase() {
+        val fresh = newPhrase ?: return
+        run("Saving the new phrase…") {
+            withContext(Dispatchers.IO) { fresh.save() }
+            newPhrase = null
+            screen = Screen.Settings
+            say("New recovery phrase saved. The old one opens nothing any more.")
+        }
+    }
+
+    fun dropNewPhrase() {
+        newPhrase = null
+        screen = Screen.Settings
+    }
+
+    /** Forgot your master password? Step 1: the words open the account's keys (from the server if not here). */
+    fun startRecovery(username: String, phrase: String, url: String, certificate: Uri?) = run("Checking the words…") {
+        val address = url.trim().takeIf { it.length > 8 } ?: ""
+        val ca = if (address.isEmpty()) "" else withContext(Dispatchers.IO) {
+            certificate?.let { keepCertificate(it, address) } ?: ""
+        }
+        recovering = withContext(Dispatchers.Default) { Recovery.openWithPhrase(store, username, phrase, address, ca) }
+        screen = Screen.RecoverPassword
+    }
+
+    /** Step 2: the new keys under the new password, a new phrase and kit; nothing written yet. */
+    fun prepareRecovery(password: String) {
+        val opened = recovering ?: return
+        run("Making the new keys…") {
+            recovered = withContext(Dispatchers.Default) { Recovery.prepare(opened, password) }
+            screen = Screen.RecoverKit
+        }
+    }
+
+    /** Step 3: written (the server first), and the account opens. */
+    fun finishRecovery() {
+        val pending = recovered ?: return
+        run("Recovering the account…") {
+            val account = withContext(Dispatchers.Default) { pending.save(store) }
+            lockout.reset(account.username)
+            recovering = null
+            recovered = null
+            opened(OpenAccount(account), pending.password)
+            say("Account recovered. Use the new master password from now on" +
+                if (account.server != null) "; your other devices sign in again with it and the new Emergency Kit." else ".")
+        }
+    }
+
+    fun cancelRecovery() {
+        recovering = null
+        recovered = null
+        home()
+    }
+
+    /** Write ``text`` to a file the user picked (an Emergency Kit). */
+    fun saveText(uri: Uri, text: String, done: String) = run("Saving…") {
+        withContext(Dispatchers.IO) {
+            context.contentResolver.openOutputStream(uri, "wt").use { out ->
+                requireNotNull(out) { "That file cannot be written." }
+                out.write(text.toByteArray(Charsets.UTF_8))
+            }
+        }
+        say(done)
     }
 
     /** The fingerprint gave the password back; a wrong one (changed on another device) is forgotten. */
@@ -246,6 +357,7 @@ class AppState(private val context: Context) {
     fun lock() {
         question?.answer?.complete(null)
         question = null
+        newPhrase = null
         val name = open?.account?.username
         open = null
         vaultId = null
@@ -262,6 +374,8 @@ class AppState(private val context: Context) {
         if (!away && open != null && gone > LOCK_AFTER_MS) lock()
         // A new account half made keeps longer (the words are being written down), but not for ever.
         if (!away && creating != null && gone > DROP_NEW_ACCOUNT_MS) cancelCreate()
+        if (!away && (recovering != null || recovered != null) && gone > DROP_NEW_ACCOUNT_MS) cancelRecovery()
+        if (!away && newPhrase != null && open == null) newPhrase = null
         leftAt = 0L
         // Back in front: whatever picker or prompt was open is closed now, so the next leaving counts.
         away = false

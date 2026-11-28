@@ -344,6 +344,14 @@ def main():
     sync_all(dave)
     PCS["dave"] = dave
 
+    # gus: password change, recovery and a new phrase (RecoveryTest)
+    device("pc-gus")
+    made_gus = accounts.prepare_account("gus", "gus's pass")
+    gus = made_gus.save()
+    assert account_sync.connect(gus, url, cert, TOKEN) == "created"
+    add(gus, None, "Bike", "b1ke")
+    sync_all(gus)
+
     device("pc-alice")
     sync_all(alice)
     expected = {alice.vault_file(v).name: alice.vault_file(v).load() for v in alice.vault_ids()}
@@ -357,6 +365,8 @@ def main():
            "phone_made": os.path.join(LAB, "phone-made.json"),
            "erin": {"username": "erin", "password": "erin's pass",
                     "secret_key_text": made_erin.secret_key_text},
+           "gus": {"username": "gus", "password": "gus's pass", "secret_key_text": made_gus.secret_key_text,
+                   "phrase": made_gus.recovery_phrase},
            "dave": {"username": "dave", "password": "dave's pass", "secret_key_text": made_dave.secret_key_text},
            "carol": {"username": "carol", "password": CAROL_PW, "secret_key_text": made_carol.secret_key_text},
            "sign_up_code": TOKEN, "control": start_control()}

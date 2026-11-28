@@ -402,6 +402,21 @@ object AccountSync {
         account.vaultFile(vaultId).basePath.delete()      // agreed with a vault that is gone
     }
 
+    /**
+     * A new master password. On a server, the server learns it first: if it
+     * cannot be reached nothing changes anywhere (account_sync.change_password).
+     */
+    fun changePassword(account: Account, newPassword: String) {
+        if (newPassword.isEmpty()) throw IllegalArgumentException("Enter a new master password.")
+        if (account.server == null) return account.changePassword(newPassword)
+        val server = loggedIn(account)
+        try {
+            account.changePassword(newPassword) { sealed, login -> server.putKeyset(login, sealed) }
+        } finally {
+            server.logout()
+        }
+    }
+
     // ------------------------------------------------------------------ sharing (the PC's phase 4)
     /** Why a vault cannot be shared right now, or "" when it can (sharing_ui.can_share). */
     fun whyNotShare(account: Account, vaultId: String): String {
