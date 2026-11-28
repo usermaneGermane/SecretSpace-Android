@@ -106,7 +106,9 @@ fun EntryScreen(state: AppState, vaultId: String, entryId: String) {
                     QuietButton("Copy", { copy("Web address", url, false) })
                 }
             }
-            Py.text(entry, "totp").takeIf { it.isNotEmpty() }?.let { TotpCard(it) { code -> copy("2FA code", code, true) } }
+            Py.text(entry, "totp").takeIf { it.isNotEmpty() }?.let {
+                TotpCard(state, Py.text(entry, "site"), it) { code -> copy("2FA code", code, true) }
+            }
             Py.text(entry, "notes").takeIf { it.isNotEmpty() }?.let { notes ->
                 Gap(Sp.m)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -171,21 +173,55 @@ private fun ValueCard(label: String, value: String, style: TextStyle = Type.lead
 
 /** The 2FA code of the moment, and how long it stays. */
 @Composable
-private fun TotpCard(stored: String, onCopy: (String) -> Unit) {
+private fun TotpCard(state: AppState, site: String, stored: String, onCopy: (String) -> Unit) {
     val params = remember(stored) { runCatching { Totp.parse(stored) } }
+    // Hidden until asked for, and every Show asks for the master password (the PC, owner 2026-11-06).
+    // Leaving the entry or locking hides it again: the state goes with the screen.
+    var shown by remember(stored) { mutableStateOf(false) }
+    var asking by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(stored) {
-        while (true) {
+    LaunchedEffect(stored, shown) {
+        while (shown) {
             now = System.currentTimeMillis()
             delay(1000 - now % 1000)
         }
     }
-    params.onFailure { ValueCard("2FA", it.message ?: "Cannot make codes from this secret.", Type.body) {} }
+    params.onFailure { ValueCard("2FA", "No codes from this secret: " + (it.message ?: "it cannot be read."), Type.body) {} }
     params.onSuccess { p ->
         val code = Totp.code(p, now / 1000.0)
-        ValueCard("2FA code · ${Totp.secondsLeft(p, now / 1000.0)}s left", Totp.spaced(code), Type.code) {
-            QuietButton("Copy", { onCopy(code) })
+        ValueCard(if (shown) "2FA code · changes in ${Totp.secondsLeft(p, now / 1000.0)} s" else
+            "2FA code · Show asks for your master password", if (shown) Totp.spaced(code) else
+            Totp.spaced("•".repeat(p.digits)), Type.code) {
+            QuietButton(if (shown) "Hide" else "Show", { if (shown) shown = false else asking = true })
+            if (shown) {
+                Spacer(Modifier.width(Sp.s))
+                MainButton("Copy", { onCopy(Totp.code(p, System.currentTimeMillis() / 1000.0)) })
+            }
         }
+    }
+    if (asking) {
+        var password by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { asking = false }, containerColor = Look.c.card, shape = Radius.dialog,
+            title = { Text("Show 2FA code", style = Type.heading) },
+            text = { Column {
+                Text("Enter your master password to see the code for “${site.take(40)}”. SecretSpace asks every time.",
+                    style = Type.body, color = Look.c.muted)
+                Gap(Sp.s)
+                Field("Master password", password, { password = it }, secret = true)
+            } },
+            confirmButton = { MainButton("Show code", {
+                val typed = password
+                asking = false
+                state.run("Checking…") {
+                    val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        state.open?.account?.checkPassword(typed) == true
+                    }
+                    if (ok) shown = true else state.say("That is not the master password.")
+                }
+            }, enabled = password.isNotEmpty()) },
+            dismissButton = { QuietButton("Cancel", { asking = false }) },
+        )
     }
 }
 

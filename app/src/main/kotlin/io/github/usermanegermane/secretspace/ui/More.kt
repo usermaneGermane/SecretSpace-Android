@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.view.autofill.AutofillManager
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -313,7 +314,7 @@ fun ConnectScreen(state: AppState) {
 private fun SecuritySettings(state: AppState) {
     val open = state.open ?: return
     val username = open.account.username
-    val activity = LocalContext.current as FragmentActivity
+    val activity = LocalActivity.current as FragmentActivity
     @Suppress("UNUSED_VARIABLE") val redraw = state.version
     var on by remember(username) { mutableStateOf(Biometric.isOn(activity, username)) }
     var asking by remember { mutableStateOf(false) }

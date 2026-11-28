@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.usermanegermane.secretspace"
         minSdk = 26                 // java.nio.file and java.time, which :core uses
         targetSdk = 37
-        versionCode = 11
-        versionName = "0.11.0"       // = secretspace.core.AppVersion.VERSION (a test checks)
+        versionCode = 12
+        versionName = "0.12.0"       // = secretspace.core.AppVersion.VERSION (a test checks)
     }
 
     buildFeatures { compose = true; buildConfig = true }
