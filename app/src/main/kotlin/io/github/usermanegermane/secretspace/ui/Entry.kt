@@ -231,7 +231,7 @@ fun HistoryScreen(state: AppState, vaultId: String, entryId: String) {
                 Row {
                     Text(Times.long(Py.text(line, "at")), style = Type.caption, color = Look.c.muted,
                         modifier = Modifier.width(140.dp))
-                    Text("${line["by"]} ${line["action"]}" + (if (check == Changelog.BAD) "  ⚠ signature does not match" else ""),
+                    Text("${line["by"]} ${Changelog.describe(line)}" + (if (check == Changelog.BAD) "  ⚠ signature does not match" else ""),
                         style = Type.caption, color = if (check == Changelog.BAD) Look.c.danger else Look.c.text)
                 }
             }

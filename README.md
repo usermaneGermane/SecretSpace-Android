@@ -1,7 +1,7 @@
 # SecretSpace for Android
 
 The Android app of [SecretSpace](https://github.com/usermaneGermane/SecretSpace-Client-Windows),
-a password manager with its own sync server. **Early version (0.6): make an account
+a password manager with its own sync server. **Early version (0.7): make an account
 on the phone only or on your server, or sign in to one there; unlock with your
 fingerprint, and fill in logins in other apps.**
 
@@ -24,7 +24,8 @@ on your own network. The iPhone app is a separate project.
 | 7. The desktop's look: its colours, typeface, cards and tiles, light and dark | done (0.4.0) |
 | 8. Vaults: make, rename, delete or leave, put back | done (0.5.0) |
 | 9. Sharing a vault: members, roles, the fingerprint check, remove with a new key | done (0.6.0) |
-| 10. The change log, password change and recovery, import and export, settings | next, towards 1.0 |
+| 10. Activity: the vault's signed change log, and the server's log for owners | done (0.7.0) |
+| 11. Password change and recovery, import and export, settings | next, towards 1.0 |
 
 ## Installing
 
@@ -94,6 +95,13 @@ screen uses a colour of its own.
   written afterwards; **Change key**; **Check** a member whose fingerprint
   this phone has not compared yet. The vault key reaches a member only
   wrapped to their own key, signed by yours.
+- **Activity** (menu → Activity, or Vaults → Activity), as the PC's Activity
+  window: who changed what in a vault, newest first, in the PC's words
+  (*dave changed the password of “Mail”*), each line's signature checked
+  against its author's key; **Check signatures** fetches the keys of people
+  the phone has not met. Owners also see the **Server log**: uploads,
+  members added and removed, key changes, with the address each came from.
+  Values are never recorded, and neither is who looked at an entry.
 - Every vault of the account, shared ones included (read only where you are a
   reader), with search.
 - An entry: copy the username or password, the 2FA code of the moment, the web

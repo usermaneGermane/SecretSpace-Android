@@ -172,6 +172,56 @@ object Changelog {
 
     var lineId: () -> String = { ac.randomBytes(8).toHex() }
 
+    // ------------------------------------------------------------------ for the screen
+    private val FIELD_LABELS = mapOf("site" to "name", "username" to "username", "password" to "password",
+        "notes" to "notes", "totp" to "2FA", "url" to "web address")
+
+    /** A line as a sentence without its author: “changed the password of “Mail”” (changelog.describe). */
+    fun describe(line: Map<String, Any?>): String {
+        val title = "“" + (Py.text(line, "title").ifEmpty { "an entry" }) + "”"
+        val fields = (asList(line["fields"]) ?: emptyList()).mapNotNull { FIELD_LABELS[it as? String] }
+        val what = if (fields.size > 1) fields.dropLast(1).joinToString(", ") + " and " + fields.last()
+            else fields.joinToString("")
+        val count = pyInt(line["count"] ?: 0L) ?: 0L
+        return when (line["action"]) {
+            ADDED -> "added $title"
+            EDITED -> "changed the ${what.ifEmpty { "details" }} of $title"
+            REVERTED -> "put back an earlier version of $title" + (if (what.isNotEmpty()) " ($what)" else "")
+            ARCHIVED -> "archived $title"
+            MOVED -> "moved $title to another vault"
+            RESTORED -> "restored $title from the archive"
+            DELETED -> "deleted $title for good"
+            IMPORTED -> "added $count entries at once (an import)"
+            DELETED_MANY -> "deleted $count entries for good"
+            HISTORY_CLEARED -> "cleared the earlier versions of $title"
+            else -> "changed something"
+        }
+    }
+
+    private fun role(line: Map<String, Any?>) = Py.text(line, "role").ifEmpty { "member" }.lowercase()
+    private fun member(line: Map<String, Any?>) = if ("member" in line) Py.str(line["member"]) else "?"
+
+    private fun a(word: String) = (if (word.take(1) in setOf("a", "e", "i", "o", "u")) "an " else "a ") + word
+
+    /** One line of the server's own log as a sentence without its author (sharing_ui.describe_server_line). */
+    fun describeServerLine(line: Map<String, Any?>): String {
+        val event = Py.text(line, "event")
+        return when (event) {
+            "upload" -> "uploaded changes (revision ${if ("revision" in line) Py.str(line["revision"]) else "?"})"
+            "member_added" -> "added ${member(line)} as ${role(line)}"
+            "member_role" -> "made ${member(line)} ${a(role(line))}"
+            "key_changed" -> {
+                val gone = (asList(line["removed"]) ?: emptyList()).map { Py.str(it) }
+                "changed the vault's key" + if (gone.isNotEmpty()) " and removed " + gone.joinToString(", ") else ""
+            }
+            "vault_created" -> "made the vault"
+            "vault_renamed" -> "renamed the vault"
+            "vault_deleted" -> "deleted the vault"
+            "member_left" -> "left the vault"
+            else -> event.ifEmpty { "did something" }
+        }
+    }
+
     /**
      * Note in ``data`` what ``username`` changed since ``before``: signed
      * lines, ``updated_by`` on each entry, ``by`` on each new revision.

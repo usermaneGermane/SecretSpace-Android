@@ -229,6 +229,10 @@ def pc_action(name, body):
         who = PCS[body["who"]]
         listed = with_server(who, lambda s: s.members(vault_named(who, body["name"])))
         return {"members": sorted(m["username"] for m in listed.get("members") or [])}
+    if name == "describe":             # {lines, server_lines}: the PC's sentences for them
+        import sharing_ui                                   # late: it brings the GUI toolkit
+        return {"lines": [changelog.describe(line) for line in body.get("lines") or []],
+                "server_lines": [sharing_ui.describe_server_line(line) for line in body.get("server_lines") or []]}
     if name == "check_folder":
         os.environ["SECRETSPACE_DATA_DIR"] = os.path.join(body["home"], "data")
         on_phone = accounts.unlock(body["username"], body["password"])

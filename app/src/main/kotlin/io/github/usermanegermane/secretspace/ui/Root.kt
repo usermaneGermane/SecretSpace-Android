@@ -54,6 +54,8 @@ fun Root(state: AppState) {
                 Screen.Settings -> SettingsScreen(state)
                 Screen.Vaults -> VaultsScreen(state)
                 is Screen.Members -> MembersScreen(state, screen.vaultId)
+                is Screen.Activity -> ActivityScreen(state, screen.vaultId)
+                is Screen.ServerLog -> ServerLogScreen(state, screen.vaultId)
                 Screen.Connect -> ConnectScreen(state)
             }
             state.busy?.let {
