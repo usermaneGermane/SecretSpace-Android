@@ -1,6 +1,7 @@
 package io.github.usermanegermane.secretspace.ui
 
 import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -83,7 +84,7 @@ fun UnlockScreen(state: AppState, username: String) {
     var kit by remember { mutableStateOf("") }
     var chosen by remember { mutableStateOf(username) }
     val accounts = state.store.listAccounts()
-    val activity = LocalContext.current as FragmentActivity
+    val activity = LocalActivity.current as FragmentActivity
     val fingerprint = Biometric.canOpen(activity, chosen)
     fun withFingerprint() {
         state.away = true

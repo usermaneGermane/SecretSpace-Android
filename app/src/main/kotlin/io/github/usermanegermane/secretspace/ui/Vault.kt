@@ -168,8 +168,8 @@ fun VaultScreen(state: AppState) {
             verticalArrangement = Arrangement.spacedBy(Sp.s)) {
             items(entries, key = { (vid, e) -> vid + "/" + e["id"] }) { (vid, e) ->
                 // All vaults: each row names its vault, as on the PC.
-                val line = rowLine(e).let { if (all) listOf(names[vid].orEmpty(), it).filter { s -> s.isNotEmpty() }
-                    .joinToString(" · ") else it }
+                val line = rowLine(e, open.account.isShared(vid)).let { if (all) listOf(names[vid].orEmpty(), it)
+                    .filter { s -> s.isNotEmpty() }.joinToString(" · ") else it }
                 RowCard(Py.text(e, "site"), line, { state.screen = Screen.Entry(vid, e["id"] as String) },
                     side = Times.short(Py.text(e, "updated_at")))
             }
@@ -177,8 +177,9 @@ fun VaultScreen(state: AppState) {
     }
 }
 
-/** A row's quiet line (gui.py): the username, then "2FA" and "note" when it has them. */
-fun rowLine(e: Obj): String = (listOf(Py.text(e, "username")).filter { it.isNotEmpty() } +
+/** A row's quiet line (gui.py): the username, then "shared", "2FA" and "note" when they apply. */
+fun rowLine(e: Obj, shared: Boolean = false): String = (listOf(Py.text(e, "username")).filter { it.isNotEmpty() } +
+    listOfNotNull("shared".takeIf { shared }) +
     listOf("2FA" to "totp", "note" to "notes").filter { Py.text(e, it.second).isNotEmpty() }.map { it.first })
     .joinToString(" · ")
 
