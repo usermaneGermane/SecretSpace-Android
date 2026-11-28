@@ -47,7 +47,9 @@ fun VaultScreen(state: AppState) {
     val open = state.open ?: return
     @Suppress("UNUSED_VARIABLE") val redraw = state.version
     val vaults = open.vaults()
+    val all = state.vaultId == AppState.ALL && vaults.size > 1
     val current = vaults.firstOrNull { it.id == state.vaultId } ?: vaults.first()
+    val writable = vaults.filter { it.canWrite }
     var query by remember { mutableStateOf("") }
     var pickVault by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
@@ -55,7 +57,9 @@ fun VaultScreen(state: AppState) {
     var exporting by remember { mutableStateOf(false) }
     if (importing) ImportFlow(state, current.id, current.name) { importing = false }
     if (exporting) ExportFlow(state, current.id, current.name) { exporting = false }
-    val entries = open.entries(current.id, query, order = Prefs.sortOrder)
+    val entries: List<Pair<String, Obj>> = if (all) open.allEntries(query, Prefs.sortOrder)
+        else open.entries(current.id, query, order = Prefs.sortOrder).map { current.id to it }
+    val names = vaults.associate { it.id to it.name }
     var sorting by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     Column(Modifier.fillMaxSize().background(Look.c.bg)) {
@@ -77,15 +81,15 @@ fun VaultScreen(state: AppState) {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = Look.c.text) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = Look.c.card) {
-                    DropdownMenuItem(text = { Text("Archive of “${current.name}”", style = Type.body) }, onClick = {
+                    if (!all) DropdownMenuItem(text = { Text("Archive of “${current.name}”", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Archive(current.id)
                     })
-                    DropdownMenuItem(text = { Text("Activity in “${current.name}”", style = Type.body) }, onClick = {
+                    if (!all) DropdownMenuItem(text = { Text("Activity in “${current.name}”", style = Type.body) }, onClick = {
                         menu = false; state.screen = Screen.Activity(current.id)
                     })
-                    if (current.canWrite) DropdownMenuItem(text = { Text("Import into “${current.name}”…", style = Type.body) },
+                    if (!all && current.canWrite) DropdownMenuItem(text = { Text("Import into “${current.name}”…", style = Type.body) },
                         onClick = { menu = false; importing = true })
-                    DropdownMenuItem(text = { Text("Export “${current.name}”…", style = Type.body) }, onClick = {
+                    if (!all) DropdownMenuItem(text = { Text("Export “${current.name}”…", style = Type.body) }, onClick = {
                         menu = false; exporting = true
                     })
                     DropdownMenuItem(text = { Text("Vaults", style = Type.body) }, onClick = {
@@ -102,15 +106,19 @@ fun VaultScreen(state: AppState) {
             Row(Modifier.fillMaxWidth().clip(Radius.row).background(Look.c.card)
                 .clickable(enabled = vaults.size > 1) { pickVault = true }.padding(Sp.m),
                 verticalAlignment = Alignment.CenterVertically) {
-                Tile(current.name, 32.dp)
+                Tile(if (all) "All vaults" else current.name, 32.dp)
                 Spacer(Modifier.width(Sp.m))
                 Text("Vault", style = Type.smallBold, color = Look.c.muted)
                 Spacer(Modifier.width(Sp.s))
-                Text(current.name + roleText(current.role, current.shared), style = Type.bodyBold, color = Look.c.text,
+                Text(if (all) "All vaults" else current.name + roleText(current.role, current.shared), style = Type.bodyBold,
+                    color = Look.c.text,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 if (vaults.size > 1) Text("▾", style = Type.bodyBold, color = Look.c.muted)
             }
             DropdownMenu(expanded = pickVault, onDismissRequest = { pickVault = false }, containerColor = Look.c.card) {
+                DropdownMenuItem(leadingIcon = { Tile("All vaults", 28.dp) },
+                    text = { Text("All vaults", style = if (all) Type.bodyBold else Type.body) },
+                    onClick = { pickVault = false; state.vaultId = AppState.ALL })
                 vaults.forEach { v ->
                     DropdownMenuItem(leadingIcon = { Tile(v.name, 28.dp) },
                         text = { Text(v.name + roleText(v.role, v.shared), style = Type.body) },
@@ -118,18 +126,19 @@ fun VaultScreen(state: AppState) {
                 }
             }
         }
-        if (!current.canWrite) Muted(if (current.newerAppText.isNotEmpty()) "Read only: update to " +
+        if (!all && !current.canWrite) Muted(if (current.newerAppText.isNotEmpty()) "Read only: update to " +
             "${current.newerAppText} to change it." else "Shared with you for reading only.",
             Modifier.padding(horizontal = Sp.l, vertical = Sp.xs))
-        if (current.goneFromServer) Muted("Deleted on the server by another device; kept here and not synced.",
+        if (!all && current.goneFromServer) Muted("Deleted on the server by another device; kept here and not synced.",
             Modifier.padding(horizontal = Sp.l, vertical = Sp.xs), Type.small)
         // Search, and the one green button: add an entry (the PC's "+" beside its search).
         Row(Modifier.fillMaxWidth().padding(horizontal = Sp.l, vertical = Sp.s), verticalAlignment = Alignment.CenterVertically) {
             Field("Search", query, { query = it }, Modifier.weight(1f), showLabel = false)
-            if (current.canWrite) {
+            val target = if (all) writable.firstOrNull() else current.takeIf { it.canWrite }
+            if (target != null) {
                 Spacer(Modifier.width(Sp.s))
                 Box(Modifier.size(56.dp).clip(Radius.inner).background(Look.c.green)
-                    .clickable { state.screen = Screen.Edit(current.id, null) }, contentAlignment = Alignment.Center) {
+                    .clickable { state.screen = Screen.Edit(target.id, null) }, contentAlignment = Alignment.Center) {
                     Icon(Icons.Filled.Add, contentDescription = "New entry", tint = Look.c.onAccent)
                 }
             }
@@ -157,8 +166,11 @@ fun VaultScreen(state: AppState) {
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Sp.l, end = Sp.l, bottom = Sp.xxl),
             verticalArrangement = Arrangement.spacedBy(Sp.s)) {
-            items(entries, key = { it["id"] as String }) { e ->
-                RowCard(Py.text(e, "site"), rowLine(e), { state.screen = Screen.Entry(current.id, e["id"] as String) },
+            items(entries, key = { (vid, e) -> vid + "/" + e["id"] }) { (vid, e) ->
+                // All vaults: each row names its vault, as on the PC.
+                val line = rowLine(e).let { if (all) listOf(names[vid].orEmpty(), it).filter { s -> s.isNotEmpty() }
+                    .joinToString(" · ") else it }
+                RowCard(Py.text(e, "site"), line, { state.screen = Screen.Entry(vid, e["id"] as String) },
                     side = Times.short(Py.text(e, "updated_at")))
             }
         }

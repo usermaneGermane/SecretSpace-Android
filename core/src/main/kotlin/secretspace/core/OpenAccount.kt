@@ -81,6 +81,19 @@ class OpenAccount(val account: Account) {
         return if (archived) found.sortedByDescending { Py.text(it, "archived_at") } else sorted(found, order)
     }
 
+    /**
+     * "All vaults" (the PC's list with every vault at once): the entries of
+     * every vault, searched and ordered together, each with its vault.
+     */
+    fun allEntries(query: String = "", order: String = "modified_desc"): List<Pair<String, Obj>> {
+        val home = java.util.IdentityHashMap<Obj, String>()
+        for (id in account.vaultIds()) {
+            if (id !in data) continue
+            for (e in entries(id, query, order = order)) home[e] = id
+        }
+        return sorted(home.keys.toList(), order).map { home.getValue(it) to it }
+    }
+
     fun find(vaultId: String, entryId: String): Obj? = data[vaultId]?.let { Entries.findEntry(it, entryId) }
 
     // ------------------------------------------------------------------ changing
