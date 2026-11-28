@@ -142,8 +142,16 @@ def vaults_of(account):
         data = file.load()
         checks = [changelog.check(line, file.hex, account.signing_key_for(line["by"]))
                   for line in changelog.lines_of(data)]
-        out[file.name] = {"data": data, "log": checks, "role": account.vault_role(vault_id)}
+        out[file.name] = {"data": data, "log": checks, "role": account.vault_role(vault_id),
+                          "gone": bool(account.vault_record(vault_id).get("gone_from_server"))}
     return out
+
+
+def vault_named(account, name):
+    for vault_id in account.vault_ids():
+        if account.vault_file(vault_id).name == name:
+            return vault_id
+    raise KeyError(f"{account.username} has no vault {name!r}")
 
 
 def pc_action(name, body):
@@ -198,6 +206,29 @@ def pc_action(name, body):
         return {"vaults": vaults, "fingerprint": account.fingerprint,
                 "phrase_opens_it": account_crypto.public_key_of(opened.keyset) ==
                 account_crypto.public_key_of(account.keyset)}
+    if name == "make_vault":           # {who, name, site, password}: a vault made on a PC, synced
+        device("pc-" + body["who"])
+        who = PCS[body["who"]]
+        made = who.create_vault(body["name"]).hex
+        add(who, made, body["site"], body["password"])
+        sync_all(who)
+        return {}
+    if name == "delete_vault":         # {who, name}: deleted (or left) on a PC
+        device("pc-" + body["who"])
+        who = PCS[body["who"]]
+        account_sync.delete_vault(who, vault_named(who, body["name"]))
+        return {}
+    if name == "share":                # {who, name, to, role}
+        device("pc-" + body["who"])
+        who = PCS[body["who"]]
+        with_server(who, lambda s: account_sync.share_vault(
+            who, s, vault_named(who, body["name"]), account_sync.lookup_contact(who, s, body["to"]), body["role"]))
+        return {}
+    if name == "members":              # {who, name}: as the server lists them
+        device("pc-" + body["who"])
+        who = PCS[body["who"]]
+        listed = with_server(who, lambda s: s.members(vault_named(who, body["name"])))
+        return {"members": sorted(m["username"] for m in listed.get("members") or [])}
     if name == "check_folder":
         os.environ["SECRETSPACE_DATA_DIR"] = os.path.join(body["home"], "data")
         on_phone = accounts.unlock(body["username"], body["password"])
@@ -300,6 +331,15 @@ def main():
     sync_all(erin)
     PCS["erin"] = erin
 
+    # dave: the Vaults screen (VaultsTest) -- his phone and his PC make,
+    # rename, delete and put back vaults; bob shares one he then leaves.
+    device("pc-dave")
+    made_dave = accounts.prepare_account("dave", "dave's pass")
+    dave = made_dave.save()
+    assert account_sync.connect(dave, url, cert, TOKEN) == "created"
+    sync_all(dave)
+    PCS["dave"] = dave
+
     device("pc-alice")
     sync_all(alice)
     expected = {alice.vault_file(v).name: alice.vault_file(v).load() for v in alice.vault_ids()}
@@ -313,6 +353,7 @@ def main():
            "phone_made": os.path.join(LAB, "phone-made.json"),
            "erin": {"username": "erin", "password": "erin's pass",
                     "secret_key_text": made_erin.secret_key_text},
+           "dave": {"username": "dave", "password": "dave's pass", "secret_key_text": made_dave.secret_key_text},
            "carol": {"username": "carol", "password": CAROL_PW, "secret_key_text": made_carol.secret_key_text},
            "sign_up_code": TOKEN, "control": start_control()}
     lab_file = os.path.join(LAB, "lab.json")

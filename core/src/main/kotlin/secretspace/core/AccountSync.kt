@@ -370,6 +370,38 @@ object AccountSync {
         return changes
     }
 
+    /**
+     * Delete a vault for good (the PC's account_sync.delete_vault). On a
+     * server it goes there first: if the server cannot be reached nothing
+     * is deleted anywhere, so a vault never comes back after being deleted
+     * here. Someone else's vault is left, not deleted: it stays for the others.
+     */
+    fun deleteVault(account: Account, vaultId: String) {
+        val record = account.vaultRecord(vaultId)
+        if (account.server != null && record.flag("on_server") && !record.flag("gone_from_server")) {
+            val server = loggedIn(account)
+            try {
+                if (account.vaultRole(vaultId) == AccountStore.ROLE_OWNER) server.deleteVault(vaultId)
+                else server.leaveVault(vaultId, account.username)
+            } finally {
+                server.logout()
+            }
+        }
+        account.deleteVault(vaultId)
+    }
+
+    /**
+     * A vault deleted on the server and kept here goes onto the server again
+     * with the next sync, as this account's own with a first key (the PC's
+     * put_vault_back).
+     */
+    fun putVaultBack(account: Account, vaultId: String) {
+        account.markVault(vaultId, "on_server" to yes(false), "gone_from_server" to yes(false),
+            "role" to JsonPrimitive(AccountStore.ROLE_OWNER), "key_generation" to JsonPrimitive(0),
+            "members" to JsonPrimitive(1), "key_signer" to JsonPrimitive(account.username))
+        account.vaultFile(vaultId).basePath.delete()      // agreed with a vault that is gone
+    }
+
     /** The vaults a sync covers: the personal one, and every other on the server. */
     fun syncableVaults(account: Account, server: AccountServer): List<String> {
         if (!server.hasVaults() || !server.hasSignedKeys()) return listOf(account.personalId)

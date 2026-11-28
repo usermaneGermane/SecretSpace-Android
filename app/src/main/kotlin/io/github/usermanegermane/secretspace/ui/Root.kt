@@ -52,6 +52,7 @@ fun Root(state: AppState) {
                 is Screen.History -> HistoryScreen(state, screen.vaultId, screen.entryId)
                 is Screen.Archive -> ArchiveScreen(state, screen.vaultId)
                 Screen.Settings -> SettingsScreen(state)
+                Screen.Vaults -> VaultsScreen(state)
                 Screen.Connect -> ConnectScreen(state)
             }
             state.busy?.let {
